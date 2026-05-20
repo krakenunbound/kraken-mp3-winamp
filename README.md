@@ -2,6 +2,14 @@
 
 A Winamp-style desktop music player with ocean/Kraken theming — 10-band EQ, audio visualizers, particle effects, and floating album art behind the playlist.
 
+## Demo
+
+[![Watch Kraken MP3 in action on YouTube](https://img.youtube.com/vi/t21i5fS1UZY/hqdefault.jpg)](https://youtube.com/shorts/t21i5fS1UZY)
+
+**[▶ Watch on YouTube Shorts](https://youtube.com/shorts/t21i5fS1UZY)** — floating album art, visualizers, and the Winamp-style UI in motion.
+
+## Screenshots
+
 ![Kraken MP3 Winamp UI](screenshots/winamp-player.png)
 
 ![Effects, visualizers, and floating album art](screenshots/effects-menu.png)
