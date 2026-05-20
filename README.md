@@ -4,6 +4,8 @@ A Winamp-style desktop music player with ocean/Kraken theming — 10-band EQ, au
 
 ![Kraken MP3 Winamp UI](screenshots/winamp-player.png)
 
+![Effects, visualizers, and floating album art](screenshots/effects-menu.png)
+
 ## Download
 
 **[Kraken MP3 Setup 1.0.0](https://github.com/krakenunbound/kraken-mp3-winamp/releases/latest)** — Windows installer (NSIS)
