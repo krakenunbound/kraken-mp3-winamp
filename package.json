@@ -1,0 +1,104 @@
+{
+  "name": "kraken-mp3-winamp",
+  "version": "1.0.0",
+  "description": "Kraken MP3 — Winamp-style desktop player with EQ, visualizers, and floating album art",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder",
+    "build:win": "electron-builder --win nsis portable"
+  },
+  "author": "Kraken Unbound",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/krakenunbound/kraken-mp3-winamp.git"
+  },
+  "homepage": "https://github.com/krakenunbound/kraken-mp3-winamp",
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^24.9.1"
+  },
+  "dependencies": {
+    "music-metadata": "^7.14.0"
+  },
+  "build": {
+    "appId": "com.krakenunbound.mp3player.winamp",
+    "productName": "Kraken MP3",
+    "directories": {
+      "output": "dist"
+    },
+    "extraResources": [
+      {
+        "from": "assets/sample",
+        "to": "sample",
+        "filter": ["**/*"]
+      }
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icons/icon.ico",
+      "legalTrademarks": "Kraken Unbound",
+      "fileAssociations": [
+        {
+          "ext": "mp3",
+          "name": "MP3 Audio File",
+          "description": "MP3 Audio File",
+          "role": "Viewer",
+          "icon": "assets/icons/icon.ico"
+        },
+        {
+          "ext": "flac",
+          "name": "FLAC Audio File",
+          "description": "FLAC Audio File",
+          "role": "Viewer",
+          "icon": "assets/icons/icon.ico"
+        },
+        {
+          "ext": "wav",
+          "name": "WAV Audio File",
+          "description": "WAV Audio File",
+          "role": "Viewer",
+          "icon": "assets/icons/icon.ico"
+        },
+        {
+          "ext": "ogg",
+          "name": "OGG Audio File",
+          "description": "OGG Audio File",
+          "role": "Viewer",
+          "icon": "assets/icons/icon.ico"
+        },
+        {
+          "ext": "m4a",
+          "name": "M4A Audio File",
+          "description": "M4A Audio File",
+          "role": "Viewer",
+          "icon": "assets/icons/icon.ico"
+        },
+        {
+          "ext": "aac",
+          "name": "AAC Audio File",
+          "description": "AAC Audio File",
+          "role": "Viewer",
+          "icon": "assets/icons/icon.ico"
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": true,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "deleteAppDataOnUninstall": true,
+      "runAfterFinish": true,
+      "installerIcon": "assets/icons/icon.ico",
+      "uninstallerIcon": "assets/icons/icon.ico"
+    },
+    "files": [
+      "src/**/*",
+      "assets/icons/**/*",
+      "package.json"
+    ]
+  }
+}

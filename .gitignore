@@ -1,0 +1,9 @@
+node_modules/
+dist/
+src_backup*/
+*.log
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+.claude/
