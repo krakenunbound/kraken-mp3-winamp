@@ -130,35 +130,6 @@ async function scanFolderForAudio(folderPath) {
     return audioFiles;
 }
 
-function getBundledTrackSource() {
-    const bundled = app.isPackaged
-        ? path.join(process.resourcesPath, 'sample', 'Ad Astra.mp3')
-        : path.join(__dirname, '../assets/sample/Ad Astra.mp3');
-    return fs.existsSync(bundled) ? bundled : null;
-}
-
-/** Returns path to bundled bonus track (copied to Documents on first use). */
-ipcMain.handle('get-bundled-track', () => {
-    const source = getBundledTrackSource();
-    if (!source) return null;
-
-    const musicDir = path.join(app.getPath('documents'), 'Kraken MP3', 'Music');
-    const dest = path.join(musicDir, 'Ad Astra.mp3');
-
-    try {
-        if (!fs.existsSync(musicDir)) {
-            fs.mkdirSync(musicDir, { recursive: true });
-        }
-        if (!fs.existsSync(dest)) {
-            fs.copyFileSync(source, dest);
-        }
-        return dest;
-    } catch (err) {
-        console.error('Failed to install bundled track:', err);
-        return source;
-    }
-});
-
 ipcMain.handle('get-backgrounds-path', () => {
     const documentsPath = app.getPath('documents');
     const bgPath = path.join(documentsPath, 'Kraken MP3', 'Wallpapers');

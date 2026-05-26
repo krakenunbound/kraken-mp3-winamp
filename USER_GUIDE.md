@@ -5,19 +5,15 @@ Winamp-style desktop music player for Windows. This guide covers installation, s
 ## Install
 
 1. Open the **`Install File`** folder in this project, or download from [GitHub Releases](https://github.com/krakenunbound/kraken-mp3-winamp/releases/latest).
-2. Run **`Kraken MP3 Setup 1.0.0.exe`** (recommended).
+2. Run **`Kraken MP3 Setup 1.0.1.exe`** (recommended).
 3. During setup you can enable **file associations** for common audio types (see table below).
 4. Launch **Kraken MP3** from the Start menu or desktop shortcut.
 
-**Portable:** run **`Kraken MP3 1.0.0.exe`** — no installer; keep the file anywhere you like.
+**Portable:** run **`Kraken MP3 1.0.1.exe`** — no installer; keep the file anywhere you like.
 
 ### First launch
 
-The player copies the bundled bonus track **“Ad Astra”** to:
-
-`Documents\Kraken MP3\Music\Ad Astra.mp3`
-
-and loads it if your playlist is empty, so you can hear the app immediately.
+The player opens to an empty playlist. Drag in some audio files, or use **File → Open** (`Ctrl+O`) or the playlist **Add** / **Add folder** controls to get started.
 
 ---
 
@@ -115,7 +111,7 @@ Settings are stored in the app’s local storage and persist between sessions.
 
 | Location | Purpose |
 |----------|---------|
-| `Documents\Kraken MP3\Music\` | Suggested music library; bonus track copied here on first run |
+| `Documents\Kraken MP3\Music\` | Suggested music library (you can keep your audio files here) |
 | `Documents\Kraken MP3\Wallpapers\` | Custom background images (jpg, png, etc.) |
 | Install folder (default) | `C:\Program Files\Kraken MP3\` when using the setup installer |
 
@@ -146,4 +142,4 @@ Use **Settings → Apps → Installed apps** (or **Add/Remove Programs**), choos
 - **Releases:** https://github.com/krakenunbound/kraken-mp3-winamp/releases  
 - **Source / build:** see [README.md](README.md) for developers  
 - **Credits:** Kraken MP3 by [The Kraken](https://github.com/krakenunbound) (Kraken Unbound)
-- **License:** MIT — see [LICENSE](LICENSE). Bonus track “Ad Astra” © The Kraken
+- **License:** MIT — see [LICENSE](LICENSE).

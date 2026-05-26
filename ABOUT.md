@@ -27,7 +27,7 @@ F:\Kraken_MP3_Winamp\
 │   └── styles.css       # Ocean-themed styling
 ├── assets/
 │   ├── icons/           # App icon (.ico, .png, .svg)
-│   └── sample/          # Bundled bonus track (Ad Astra.mp3)
+│   └── sample/          # Sample audio file for local testing (not bundled / not auto-loaded)
 ├── build/
 │   └── uninstaller.nsh  # NSIS uninstall cleanup (included in package.json nsis)
 ├── Install File/        # Latest setup + portable (local; .exe gitignored)
@@ -117,8 +117,8 @@ npm run build:win    # NSIS installer + portable
 
 ## Build Outputs (dist/)
 
-- `Kraken MP3 Setup 1.0.0.exe` — NSIS installer  
-- `Kraken MP3 1.0.0.exe` — portable  
+- `Kraken MP3 Setup 1.0.1.exe` — NSIS installer  
+- `Kraken MP3 1.0.1.exe` — portable  
 - `win-unpacked/` — unpacked directory build  
 
 ## Architecture
@@ -127,7 +127,7 @@ npm run build:win    # NSIS installer + portable
 
 - Window sizing, always-on-top, single-instance lock  
 - File/folder dialogs, file association open on launch  
-- IPC for renderer (dialogs, wallpapers, bundled track, window chrome)  
+- IPC for renderer (dialogs, wallpapers, window chrome)  
 
 ### Renderer (`renderer.js`)
 
@@ -150,4 +150,5 @@ Registered for: `.mp3`, `.flac`, `.wav`, `.ogg`, `.m4a`, `.aac`
 
 ## Version History
 
-- **v1.0.0** — Winamp UI, floating album art, bundled Ad Astra sample, public release
+- **v1.0.1** — Fix metadata race condition where the previously-loaded track's tags/cover/duration could clobber the current track's display (most visible on `.wav` files). Remove auto-loaded sample track from the player; the sample file remains in `assets/sample/` as a repo-only test asset.
+- **v1.0.0** — Winamp UI, floating album art, public release
