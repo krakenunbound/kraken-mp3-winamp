@@ -1,6 +1,6 @@
 {
   "name": "kraken-mp3-winamp",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Kraken MP3 — Winamp-style desktop player with EQ, visualizers, and floating album art",
   "main": "src/main.js",
   "scripts": {
@@ -28,13 +28,6 @@
     "directories": {
       "output": "dist"
     },
-    "extraResources": [
-      {
-        "from": "assets/sample",
-        "to": "sample",
-        "filter": ["**/*"]
-      }
-    ],
     "win": {
       "target": "nsis",
       "icon": "assets/icons/icon.ico",

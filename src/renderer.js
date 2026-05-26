@@ -258,6 +258,15 @@ let showPlaylistPanel = true;
 // Playlist metadata (durations, display titles)
 let playlistMeta = []; // array of {title, duration} per playlist index
 
+// Monotonic token guarding async loadMetadata() against races.
+// Each call captures its token; if the global has advanced by the time
+// parseFile() resolves, the result is stale and gets discarded.
+// Without this, a slow parseFile on a previous track can clobber the
+// currently-displayed track's metadata — most visibly on .wav files,
+// which have no ID3 tags of their own to "fight back" once the stale
+// result lands.
+let metadataLoadToken = 0;
+
 // Selected playlist item
 let selectedPlaylistIdx = -1;
 
@@ -401,20 +410,7 @@ async function init() {
     // Start animation loops
     requestAnimationFrame(animationLoop);
 
-    await loadBundledBonusTrack();
-
     console.log('Kraken MP3 initialized! Effect:', currentEffect);
-}
-
-async function loadBundledBonusTrack() {
-    try {
-        const trackPath = await ipcRenderer.invoke('get-bundled-track');
-        if (!trackPath || playlist.length > 0) return;
-        replacePlaylist([trackPath]);
-        setStatus('Bonus track: The Kraken — Ad Astra');
-    } catch (err) {
-        console.warn('Bundled track unavailable:', err);
-    }
 }
 
 function loadSettings() {
@@ -2170,6 +2166,12 @@ async function loadTrack(index) {
 async function loadMetadata(filePath) {
     const filename = path.basename(filePath, path.extname(filePath));
 
+    // Bump the token *and* snapshot which playlist slot this load belongs to.
+    // Any earlier in-flight parseFile() now has a stale token and will bail
+    // out instead of overwriting our display fields.
+    const myToken = ++metadataLoadToken;
+    const myIndex = currentIndex;
+
     trackTitle.textContent = filename;
     trackArtist.textContent = '';
     trackAlbum.textContent = '';
@@ -2186,6 +2188,11 @@ async function loadMetadata(filePath) {
     if (monoInd) monoInd.classList.remove('lit');
     if (stereoInd) stereoInd.classList.remove('lit');
 
+    // Clear the total-time field too — handleMetadataLoaded() on the <audio>
+    // element will repopulate it from the decoder once the new file loads.
+    // Without this, a stale duration from the previous track would linger.
+    if (totalTimeEl) totalTimeEl.textContent = '0:00';
+
     // Build initial display text from filename
     let displayTitle = filename;
     let displayArtist = '';
@@ -2193,6 +2200,12 @@ async function loadMetadata(filePath) {
     if (musicMetadata) {
         try {
             const metadata = await musicMetadata.parseFile(filePath);
+
+            // Race guard: if another loadMetadata() started while we were
+            // awaiting, abort silently — our results are for a track that's
+            // no longer current.
+            if (myToken !== metadataLoadToken) return;
+
             const { common, format } = metadata;
 
             if (common.title) {
@@ -2226,12 +2239,16 @@ async function loadMetadata(filePath) {
                 setAlbumArtFromPicture(common.picture[0]);
             }
 
-            // Store title, artist, duration in playlistMeta
-            playlistMeta[currentIndex] = playlistMeta[currentIndex] || {};
-            if (common.title) playlistMeta[currentIndex].title = common.title;
-            if (common.artist) playlistMeta[currentIndex].artist = common.artist;
-            if (format.duration) playlistMeta[currentIndex].duration = format.duration;
-            renderPlaylist();
+            // Store title, artist, duration in playlistMeta — keyed against
+            // the snapshot taken at call time, not the live currentIndex,
+            // which may have moved on.
+            if (playlist[myIndex] === filePath) {
+                playlistMeta[myIndex] = playlistMeta[myIndex] || {};
+                if (common.title) playlistMeta[myIndex].title = common.title;
+                if (common.artist) playlistMeta[myIndex].artist = common.artist;
+                if (format.duration) playlistMeta[myIndex].duration = format.duration;
+                renderPlaylist();
+            }
 
             // Build ticker text
             let tickerText = displayArtist ? `${displayArtist} - ${displayTitle}` : displayTitle;
@@ -2244,6 +2261,7 @@ async function loadMetadata(filePath) {
             startTicker(tickerText);
 
         } catch (err) {
+            if (myToken !== metadataLoadToken) return;
             console.error('Error reading metadata:', err);
             // Still start ticker with filename
             startTicker(displayTitle);

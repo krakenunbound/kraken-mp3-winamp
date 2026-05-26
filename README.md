@@ -16,9 +16,9 @@ A Winamp-style desktop music player with ocean/Kraken theming — 10-band EQ, au
 
 ## Download
 
-**[Kraken MP3 Setup 1.0.0](https://github.com/krakenunbound/kraken-mp3-winamp/releases/latest)** — Windows installer (NSIS)
+**[Kraken MP3 Setup 1.0.1](https://github.com/krakenunbound/kraken-mp3-winamp/releases/latest)** — Windows installer (NSIS)
 
-Also available: portable **`Kraken MP3 1.0.0.exe`** on the [Releases](https://github.com/krakenunbound/kraken-mp3-winamp/releases) page.
+Also available: portable **`Kraken MP3 1.0.1.exe`** on the [Releases](https://github.com/krakenunbound/kraken-mp3-winamp/releases) page.
 
 After building locally, the latest installers are also copied to the **`Install File`** folder in this repo.
 
@@ -32,14 +32,6 @@ After building locally, the latest installers are also copied to the **`Install 
 |-----------|-----------------|-------------------------------------|
 | `.mp3` `.flac` `.wav` `.ogg` `.m4a` `.aac` | Yes | Yes |
 | `.wma` `.opus` | Yes | No (open via File → Open or Open with) |
-
-## Bonus track
-
-The installer includes **“Ad Astra” by The Kraken** (~7 MB). On first launch it is copied to:
-
-`Documents\Kraken MP3\Music\Ad Astra.mp3`
-
-and loaded automatically so you can hear the player immediately.
 
 ## Features
 
@@ -90,7 +82,7 @@ Project notes for contributors: [ABOUT.md](ABOUT.md).
 
 **Kraken MP3 (Winamp Edition)** — design, code, art direction, and release by **[The Kraken](https://github.com/krakenunbound)** (Kraken Unbound).
 
-Bonus track **“Ad Astra”** — written and performed by The Kraken; included with permission for distribution with this player.
+A sample track, **“Ad Astra”** by The Kraken, lives in [`assets/sample/`](assets/sample/) for anyone cloning the repo who wants something to test the player with. It is not bundled into the installer and is not loaded by the app.
 
 ## License
 
