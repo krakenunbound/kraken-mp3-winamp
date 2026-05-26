@@ -85,6 +85,7 @@
       ]
     },
     "nsis": {
+      "include": "build/uninstaller.nsh",
       "oneClick": false,
       "perMachine": true,
       "allowToChangeInstallationDirectory": true,

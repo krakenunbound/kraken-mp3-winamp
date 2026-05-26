@@ -27,10 +27,12 @@ F:\Kraken_MP3_Winamp\
 │   ├── icons/           # App icon (.ico, .png, .svg)
 │   └── sample/          # Bundled bonus track (Ad Astra.mp3)
 ├── build/
-│   └── uninstaller.nsh  # NSIS uninstall cleanup
+│   └── uninstaller.nsh  # NSIS uninstall cleanup (included in package.json nsis)
+├── Install File/        # Latest setup + portable (local; .exe gitignored)
 ├── screenshots/         # README images
 ├── package.json         # Version, electron-builder config
 ├── README.md
+├── USER_GUIDE.md        # End-user documentation
 ├── LICENSE
 └── ABOUT.md             # This file
 ```
@@ -39,13 +41,15 @@ F:\Kraken_MP3_Winamp\
 
 - `node_modules/` — install via `npm install`
 - `dist/` — build output (upload installers to GitHub Releases)
-- `src_backup*/` — local source snapshots
+- `Install File/*.exe` — copy here after build; see `Install File/README.md`
+- `src_backup*/` — local source snapshots (do not keep in tree)
 
 ## Key Features
 
 ### Audio Playback
 
-- Formats: MP3, FLAC, WAV, OGG, M4A, AAC, WMA, OPUS
+- **Playback:** MP3, FLAC, WAV, OGG, M4A, AAC, WMA, OPUS (see [USER_GUIDE.md](USER_GUIDE.md))
+- **Installer file associations:** MP3, FLAC, WAV, OGG, M4A, AAC only (`package.json`)
 - Play / pause / previous / next, seek bar, volume, mute
 - Shuffle and repeat (off / all / one)
 - 10-band graphic equalizer with presets

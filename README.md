@@ -18,7 +18,20 @@ A Winamp-style desktop music player with ocean/Kraken theming — 10-band EQ, au
 
 **[Kraken MP3 Setup 1.0.0](https://github.com/krakenunbound/kraken-mp3-winamp/releases/latest)** — Windows installer (NSIS)
 
-Also available: portable `Kraken MP3 1.0.0.exe` on the [Releases](https://github.com/krakenunbound/kraken-mp3-winamp/releases) page.
+Also available: portable **`Kraken MP3 1.0.0.exe`** on the [Releases](https://github.com/krakenunbound/kraken-mp3-winamp/releases) page.
+
+After building locally, the latest installers are also copied to the **`Install File`** folder in this repo.
+
+## User guide
+
+**[USER_GUIDE.md](USER_GUIDE.md)** — installation, supported formats, playlist/EQ/effects, shortcuts, folders, and troubleshooting.
+
+## Supported formats
+
+| Extension | In-app playback | Optional installer file association |
+|-----------|-----------------|-------------------------------------|
+| `.mp3` `.flac` `.wav` `.ogg` `.m4a` `.aac` | Yes | Yes |
+| `.wma` `.opus` | Yes | No (open via File → Open or Open with) |
 
 ## Bonus track
 
@@ -31,24 +44,29 @@ and loaded automatically so you can hear the player immediately.
 ## Features
 
 - **Winamp-style UI** — Main, EQ, and Playlist panels (EQ / PL toggles)
-- **Formats** — MP3, FLAC, WAV, OGG, M4A, AAC, WMA, OPUS
 - **10-band graphic EQ** — Presets including Flat, Rock, Pop, Jazz, and more
 - **Visualizers** — Bars, wave, circle + mini LCD visualizer
 - **Particle effects** — Bubbles, rain, stars, embers, dust, snow, fireflies
 - **Floating album art** — Semi-transparent cover in the playlist (Float / Bounce modes)
 - **Color themes** — Kraken, grayscale, purple, crimson, and more
-- **File associations** — Optional during install
+- **File associations** — Optional during install (see table above)
 
 ## Keyboard shortcuts
 
 | Key | Action |
 |-----|--------|
 | `Space` | Play / Pause |
+| `←` / `→` | Seek ±5s |
+| `Ctrl+←` / `Ctrl+→` | Previous / Next track |
+| `↑` / `↓` | Volume |
+| `M` | Mute |
 | `S` | Shuffle |
 | `R` | Repeat |
-| `M` | Mute |
-| `~` | Effects menu (via palette button) |
+| `Ctrl+O` | Open files |
+| `~` | Effects menu |
 | `F12` | DevTools |
+
+Full list: [USER_GUIDE.md](USER_GUIDE.md#keyboard-shortcuts).
 
 ## Development
 
@@ -59,6 +77,8 @@ npm install
 npm start
 npm run build:win
 ```
+
+Project notes for contributors: [ABOUT.md](ABOUT.md).
 
 ## Tech
 

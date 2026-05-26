@@ -1,6 +1,8 @@
 node_modules/
 dist/
 src_backup*/
+Install File/*.exe
+Install File/*.blockmap
 *.log
 .DS_Store
 Thumbs.db
