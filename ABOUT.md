@@ -1,5 +1,7 @@
 # Kraken MP3 Player — Project Notes
 
+**Creator:** The Kraken (Kraken Unbound) — sole developer and release owner.
+
 **GitHub Repository:** https://github.com/krakenunbound/kraken-mp3-winamp
 
 ## Overview

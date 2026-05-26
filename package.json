@@ -8,7 +8,7 @@
     "build": "electron-builder",
     "build:win": "electron-builder --win nsis portable"
   },
-  "author": "Kraken Unbound",
+  "author": "The Kraken (Kraken Unbound)",
   "license": "MIT",
   "repository": {
     "type": "git",

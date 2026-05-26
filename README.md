@@ -86,8 +86,12 @@ Project notes for contributors: [ABOUT.md](ABOUT.md).
 - music-metadata
 - HTML5 Audio + Web Audio API
 
+## Credits
+
+**Kraken MP3 (Winamp Edition)** — design, code, art direction, and release by **[The Kraken](https://github.com/krakenunbound)** (Kraken Unbound).
+
+Bonus track **“Ad Astra”** — written and performed by The Kraken; included with permission for distribution with this player.
+
 ## License
 
-MIT — see [LICENSE](LICENSE). Bonus track “Ad Astra” © The Kraken — included with permission for distribution with this player.
-
-Built by [Kraken Unbound](https://github.com/krakenunbound).
+MIT — see [LICENSE](LICENSE). Copyright © 2026 The Kraken (Kraken Unbound).

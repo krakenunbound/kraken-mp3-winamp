@@ -145,6 +145,5 @@ Use **Settings → Apps → Installed apps** (or **Add/Remove Programs**), choos
 
 - **Releases:** https://github.com/krakenunbound/kraken-mp3-winamp/releases  
 - **Source / build:** see [README.md](README.md) for developers  
-- **License:** MIT — bonus track “Ad Astra” © The Kraken (included with permission)
-
-Built by [Kraken Unbound](https://github.com/krakenunbound).
+- **Credits:** Kraken MP3 by [The Kraken](https://github.com/krakenunbound) (Kraken Unbound)
+- **License:** MIT — see [LICENSE](LICENSE). Bonus track “Ad Astra” © The Kraken
