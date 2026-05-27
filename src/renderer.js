@@ -542,7 +542,12 @@ function handleEffectsPanelApply(payload) {
                 }
                 customThemeColors[payload.key] = payload.value;
             }
-            applyTheme(currentTheme, { broadcastEffects: false });
+            // Broadcast effects state so the panel learns we switched to
+            // 'custom' and rebuilds the swatch grid with the new overrides.
+            // Without this, the panel's lastState.theme stays at the preset,
+            // resolveOverrides() returns {}, and the next theme-apply hook
+            // overwrites the just-applied swatch with the bare preset value.
+            applyTheme(currentTheme);
             break;
         case 'reset-custom-colors':
             // Clear overrides. If currently on Custom, the user sees the bare
