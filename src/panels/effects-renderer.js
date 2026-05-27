@@ -12,7 +12,24 @@ const effectSizeVal = document.getElementById('effectSizeVal');
 const effectSpeedVal = document.getElementById('effectSpeedVal');
 const customColorGrid = document.getElementById('customColorGrid');
 
-let lastState = { theme: 'kraken', customThemeColors: {} };
+let lastState = { theme: 'kraken', customBaseTheme: 'kraken', customThemeColors: {} };
+
+/**
+ * Pick the base preset id for building the customize-colors grid swatches.
+ * For 'custom' we layer overrides on top of customBaseTheme; for a real
+ * preset we just show that preset cleanly so the user sees what the preset
+ * looks like before deciding to start editing (which auto-rebases the slot).
+ */
+function resolveBaseTheme(state) {
+    if (state.theme === 'custom') {
+        return state.customBaseTheme || 'kraken';
+    }
+    return state.theme || 'kraken';
+}
+
+function resolveOverrides(state) {
+    return state.theme === 'custom' ? (state.customThemeColors || {}) : {};
+}
 const dirtyColorKeys = new Set();
 
 function sendApply(action, data = {}) {
@@ -108,7 +125,7 @@ function wireColorRow(key, picker, hexInput, applyBtn, row) {
 
 function buildCustomColorGrid(state) {
     if (!customColorGrid) return;
-    const payload = buildThemePayload(state.theme || 'kraken', state.customThemeColors || {});
+    const payload = buildThemePayload(resolveBaseTheme(state), resolveOverrides(state));
     customColorGrid.innerHTML = '';
 
     for (const { key, label } of CUSTOM_COLOR_KEYS) {
@@ -155,7 +172,7 @@ function buildCustomColorGrid(state) {
 
 function updateCustomColorGrid(state) {
     if (!customColorGrid) return;
-    const payload = buildThemePayload(state.theme || 'kraken', state.customThemeColors || {});
+    const payload = buildThemePayload(resolveBaseTheme(state), resolveOverrides(state));
 
     if (!customColorGrid.children.length) {
         buildCustomColorGrid(state);
@@ -177,6 +194,7 @@ function applyStateToUI(state) {
     const prevTheme = lastState.theme;
     lastState = {
         theme: state.theme || 'kraken',
+        customBaseTheme: state.customBaseTheme || 'kraken',
         customThemeColors: state.customThemeColors || {}
     };
     if (state.theme !== prevTheme) {

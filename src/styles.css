@@ -543,6 +543,18 @@ body.v2-main .main-panel {
     background: var(--btn-active-bg); border-color: var(--btn-border);
     color: var(--btn-text-active); box-shadow: 0 0 6px var(--accent-glow);
 }
+/* Custom theme slot: full-width button on its own row. Gradient hints that
+   this is the user's own palette, not a preset. */
+.custom-theme-row { margin-top: 3px; }
+.custom-theme-row .theme-btn-custom {
+    flex: 1 1 100%;
+    background: linear-gradient(90deg, rgba(59,158,190,0.18) 0%, rgba(140,80,200,0.18) 50%, rgba(200,70,130,0.18) 100%);
+    letter-spacing: 1px;
+}
+.custom-theme-row .theme-btn-custom.active {
+    background: linear-gradient(90deg, rgba(59,158,190,0.38) 0%, rgba(140,80,200,0.38) 50%, rgba(200,70,130,0.38) 100%);
+    box-shadow: 0 0 8px var(--accent-glow);
+}
 .effect-slider-group {
     display: flex; align-items: center; gap: 6px; margin-bottom: 4px;
 }

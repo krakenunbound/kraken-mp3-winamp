@@ -48,8 +48,13 @@ function createParticleSystem(bubblesCanvas, particlesCanvas) {
         const prevEffect = currentEffect;
         if (state.effect !== undefined) currentEffect = state.effect;
         if (state.effectSettings) effectSettings = { ...state.effectSettings };
-        if (state.theme && PARTICLE_THEMES[state.theme]) {
-            activeThemeColors = PARTICLE_THEMES[state.theme];
+        // The 'custom' theme has no entry in PARTICLE_THEMES — particles still
+        // need a hue palette, so fall back to the user's chosen base preset.
+        const themeKey = state.theme === 'custom'
+            ? (state.customBaseTheme || 'kraken')
+            : state.theme;
+        if (themeKey && PARTICLE_THEMES[themeKey]) {
+            activeThemeColors = PARTICLE_THEMES[themeKey];
         }
 
         if (currentEffect === 'none') {

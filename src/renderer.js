@@ -59,6 +59,13 @@ const { drawVisualizerMode, resetWaterfall } = require('./shared/canvasViz');
 
 let activeThemeColors = getParticleTheme('kraken');
 let customThemeColors = {};
+/**
+ * Which preset the 'custom' slot is layered on top of. The Custom theme
+ * button shows PRESETS[customBaseTheme] + customThemeColors overrides.
+ * Updated when the user edits a color while on a preset (the active preset
+ * becomes the new base and the edit lands in the custom slot).
+ */
+let customBaseTheme = 'kraken';
 
 // Per-effect settings - each effect has its own quantity, size, speed
 const defaultEffectSettings = {
@@ -285,6 +292,16 @@ function loadSettings() {
     currentViz = settings.visualizer ?? 'none';
     currentTheme = settings.theme ?? 'kraken';
     customThemeColors = settings.customThemeColors || {};
+    customBaseTheme = settings.customBaseTheme || 'kraken';
+    // Migration: pre-custom-slot users had customThemeColors overlaid on every
+    // preset. Promote them into the Custom slot so they see their work after
+    // the behavior change (presets are now clean).
+    if (settings.customBaseTheme === undefined
+        && Object.keys(customThemeColors).length > 0
+        && currentTheme !== 'custom') {
+        customBaseTheme = PRESETS[currentTheme] ? currentTheme : 'kraken';
+        currentTheme = 'custom';
+    }
     floatArtMode = settings.floatArtMode ?? 'off';
     isShuffle = settings.shuffle ?? false;
     repeatMode = settings.repeat ?? 0;
@@ -462,13 +479,19 @@ window.getEffectsStateForIpc = function getEffectsStateForIpc() {
         visualizer: currentViz,
         floatArtMode,
         theme: currentTheme,
+        customBaseTheme,
         customThemeColors: { ...customThemeColors },
         effectSettings: { ...effectSettings }
     };
 };
 
 window.getThemePayloadForIpc = function getThemePayloadForIpc() {
-    return buildThemePayload(currentTheme, customThemeColors);
+    const isCustom = currentTheme === 'custom';
+    const baseId = isCustom ? (PRESETS[customBaseTheme] ? customBaseTheme : 'kraken') : currentTheme;
+    const overrides = isCustom ? customThemeColors : {};
+    const payload = buildThemePayload(baseId, overrides);
+    payload.themeId = currentTheme;
+    return payload;
 };
 
 function broadcastEffectsState() {
@@ -510,11 +533,21 @@ function handleEffectsPanelApply(payload) {
             break;
         case 'set-custom-color':
             if (payload.key && payload.value) {
+                // Editing while on a preset rebases the Custom slot to that
+                // preset and switches into the slot — the user keeps the
+                // colors they're staring at as the starting point.
+                if (currentTheme !== 'custom') {
+                    customBaseTheme = PRESETS[currentTheme] ? currentTheme : 'kraken';
+                    currentTheme = 'custom';
+                }
                 customThemeColors[payload.key] = payload.value;
             }
             applyTheme(currentTheme, { broadcastEffects: false });
             break;
         case 'reset-custom-colors':
+            // Clear overrides. If currently on Custom, the user sees the bare
+            // base preset. If on a real preset, nothing visually changes —
+            // but the saved custom slot is now empty.
             customThemeColors = {};
             applyTheme(currentTheme);
             break;
@@ -663,6 +696,7 @@ function saveSettings() {
         effect: currentEffect,
         visualizer: currentViz,
         theme: currentTheme,
+        customBaseTheme,
         customThemeColors,
         perEffectSettings,
         shuffle: isShuffle,
@@ -2057,11 +2091,24 @@ function updateBalanceIndicator() {
 // ============================================================================
 // COLOR THEMES
 // ============================================================================
+/**
+ * Apply a theme. Presets paint cleanly (no custom-color overlay). The
+ * synthetic 'custom' theme paints PRESETS[customBaseTheme] + customThemeColors
+ * so the user's saved palette is its own slot, restored by clicking Custom.
+ */
 function applyTheme(themeId, options = {}) {
-    const preset = PRESETS[themeId];
+    const isCustom = themeId === 'custom';
+    const baseId = isCustom ? (PRESETS[customBaseTheme] ? customBaseTheme : 'kraken') : themeId;
+    const preset = PRESETS[baseId];
     if (!preset) return;
+    const overrides = isCustom ? customThemeColors : {};
+
     currentTheme = themeId;
-    const payload = buildThemePayload(themeId, customThemeColors);
+    const payload = buildThemePayload(baseId, overrides);
+    // Tag the payload with the user-facing theme id ('custom' or a preset) so
+    // satellite panels can highlight the right theme button.
+    payload.themeId = themeId;
+
     activeThemeColors = {
         hueBase: preset.hueBase,
         hueRange: preset.hueRange,
