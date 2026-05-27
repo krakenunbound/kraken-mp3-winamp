@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog, Menu } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, Menu, screen } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { createDockEngine } = require('./main/dockEngine');
@@ -16,7 +16,8 @@ const {
 } = require('./main/windowBounds');
 
 const EFFECTS_PANEL_WIDTH = 320;
-const EFFECTS_PANEL_HEIGHT = 520;
+const EFFECTS_PANEL_HEIGHT = 720;
+const EFFECTS_PANEL_MIN_HEIGHT = 400;
 
 function readBuildFlavor() {
     try {
@@ -273,18 +274,29 @@ function ensureEffectsWindow() {
     if (effectsWindow && !effectsWindow.isDestroyed()) return effectsWindow;
     if (!mainWindow || mainWindow.isDestroyed()) return null;
 
+    // Cap height to whatever fits on the display the main window lives on,
+    // minus a small margin so the resize handle stays grabbable. On a 1080p
+    // monitor that's roughly 1000 px; on 1440p / 4K the user gets more room.
+    const mainBounds = mainWindow.getBounds();
+    const { workArea } = screen.getDisplayNearestPoint({
+        x: mainBounds.x + Math.floor(mainBounds.width / 2),
+        y: mainBounds.y
+    });
+    const maxH = Math.max(EFFECTS_PANEL_MIN_HEIGHT + 40, workArea.height - 40);
+    const initialH = Math.min(EFFECTS_PANEL_HEIGHT, maxH);
+
     effectsWindow = new BrowserWindow({
         title: 'Kraken Effects',
         width: EFFECTS_PANEL_WIDTH,
-        height: EFFECTS_PANEL_HEIGHT,
+        height: initialH,
         show: false,
         frame: false,
         transparent: false,
         resizable: true,
         minWidth: 280,
         maxWidth: 400,
-        minHeight: 400,
-        maxHeight: 700,
+        minHeight: EFFECTS_PANEL_MIN_HEIGHT,
+        maxHeight: maxH,
         backgroundColor: '#0a1018',
         webPreferences: {
             nodeIntegration: true,
