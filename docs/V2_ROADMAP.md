@@ -1,6 +1,6 @@
 # Kraken MP3 (Winamp Edition) — v2.0 Roadmap
 
-**Status:** In progress (Phase 4: magnetic free-order docking ✅; polish 2c/5 next)  
+**Status:** v2.0.0 shipped; post-ship polish in progress (stack focus group ✅, opt-in default-player ✅, overlay/particle lifecycle ✅; particle bug hunt in flight 2026-05-27 pm)  
 **Target version:** 2.0.0  
 **Baseline:** v1.0.x (single Electron window, stacked panels, global particles)  
 **Backup before v2 work:** `F:\Kraken_MP3_Winamp_backup_2026-05-27_1050` (create a fresh dated backup before each major phase)
@@ -427,11 +427,12 @@ Copy-paste checklist for the room:
 | Date | Who | Result | Notes |
 |------|-----|--------|-------|
 | 2026-05-27 | The Kraken | Phase 1 complete | EQ separate window; lock/unlock dock; `index-v2.html` (main+PL); playlist + viz window split documented for Phase 2a/2b |
+| 2026-05-27 (pm) | The Kraken + Claude | Phase 4 polish pass | Stack focus group (any panel click raises all 4 with one taskbar icon via shared `AppUserModelID`); overlay compact-stack guard (`MAX_STACK_SPAN_X = 640`); overlay state caching to survive cold start; particle `clear()` lifecycle on hide/effect=none; rebrand productName → "Kraken MP3"; opt-in default-player installer page (mp3/flac/wav/ogg/m4a/aac/wma/opus); fix `set-viz` dead-code break; checkpoint commit `b221470` |
 
 ### Open decisions
 
-- [ ] Effects overlay **A** vs shell **B** for particles  
-- [ ] Always-on-top: all windows vs main only  
+- [x] Effects overlay **A** vs shell **B** for particles → **A** (separate transparent overlay window sized to docked union; hidden when scattered)
+- [x] Always-on-top: all windows vs main only → **whole stack** (overlay one level above so particles paint over panels)
 - [ ] Visualizer required at first run or optional window  
 - [ ] Minimum Windows version (10 vs 11)  
 

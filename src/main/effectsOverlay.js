@@ -11,8 +11,10 @@ const MAX_STACK_SPAN_X = 640;
 function createEffectsOverlayManager({ getStackWindows, getDockState, appRoot, onReady, isStackAlwaysOnTop }) {
     let overlayWindow = null;
     let debounceTimer = null;
+    let dragSettleTimer = null;
     let overlayReady = false;
     let pendingEffectState = null;
+    let isDragging = false;
 
     const overlayHtml = path.join(appRoot, 'panels', 'effects-overlay.html');
 
@@ -40,8 +42,12 @@ function createEffectsOverlayManager({ getStackWindows, getDockState, appRoot, o
     function getOverlayLayout() {
         if (!isStackFullyDocked()) return null;
 
+        // Allow overlay to render over any contiguous subset of visible panels.
+        // Requiring all 4 visible silently kills the overlay if one window is
+        // transiently hidden during startup or programmatic show/hide. Compact
+        // check still guards against scattered layouts.
         const wins = getStackWindows().filter((w) => w && !w.isDestroyed() && w.isVisible());
-        if (wins.length !== 4) return null;
+        if (wins.length < 2) return null;
         if (!isStackLayoutCompact(wins)) return null;
 
         let minX = Infinity;
@@ -76,15 +82,31 @@ function createEffectsOverlayManager({ getStackWindows, getDockState, appRoot, o
         overlayWindow.hide();
     }
 
+    /**
+     * Z-order strategy:
+     *   - Stack-on-top ON  → overlay always-on-top at screen-saver level 1
+     *     (sits one layer above the stack which is at screen-saver level 0).
+     *   - Stack-on-top OFF → overlay must NOT be always-on-top. Otherwise it
+     *     hovers over other apps when focus leaves the stack. Instead we
+     *     `moveTop()` it after the stack rises (driven from main.js's
+     *     raiseV2PlayerStack via bringToFrontAfterStack()).
+     */
     function applyOverlayZOrder() {
         if (!overlayWindow || overlayWindow.isDestroyed()) return;
         const stackOnTop = !!(isStackAlwaysOnTop && isStackAlwaysOnTop());
         if (stackOnTop) {
             overlayWindow.setAlwaysOnTop(true, 'screen-saver', 1);
+            overlayWindow.moveTop();
         } else {
-            overlayWindow.setAlwaysOnTop(true, 'floating');
+            overlayWindow.setAlwaysOnTop(false);
+            overlayWindow.moveTop();
         }
-        overlayWindow.moveTop();
+    }
+
+    function bringToFrontAfterStack() {
+        if (!overlayWindow || overlayWindow.isDestroyed()) return;
+        if (!overlayWindow.isVisible()) return;
+        applyOverlayZOrder();
     }
 
     function flushPendingEffectState() {
@@ -158,8 +180,32 @@ function createEffectsOverlayManager({ getStackWindows, getDockState, appRoot, o
     }
 
     function scheduleSync() {
+        if (isDragging) return; // overlay stays hidden during drag; settle handler resyncs
         clearTimeout(debounceTimer);
         debounceTimer = setTimeout(syncBounds, 50);
+    }
+
+    /**
+     * Drag handling: the overlay can't keep up with 60+ move ticks per second
+     * via setBounds, so it visibly trails the stack. Hide it for the duration
+     * of the drag and snap back on drop. dockEngine drives this via
+     * setDragListener so we don't depend on per-window 'move' event ordering.
+     */
+    function handleDragStart() {
+        isDragging = true;
+        clearTimeout(debounceTimer);
+        clearTimeout(dragSettleTimer);
+        if (overlayWindow && !overlayWindow.isDestroyed() && overlayWindow.isVisible()) {
+            overlayWindow.hide();
+        }
+    }
+
+    function handleDragEnd() {
+        isDragging = false;
+        clearTimeout(dragSettleTimer);
+        // Brief settle delay so the dock engine's final reposition has landed
+        // before we measure the new bounding box.
+        dragSettleTimer = setTimeout(syncBounds, 30);
     }
 
     function sendState(state) {
@@ -188,11 +234,13 @@ function createEffectsOverlayManager({ getStackWindows, getDockState, appRoot, o
 
     function destroy() {
         clearTimeout(debounceTimer);
+        clearTimeout(dragSettleTimer);
         if (overlayWindow && !overlayWindow.isDestroyed()) {
             overlayWindow.close();
         }
         overlayWindow = null;
         overlayReady = false;
+        isDragging = false;
         pendingEffectState = null;
     }
 
@@ -213,6 +261,9 @@ function createEffectsOverlayManager({ getStackWindows, getDockState, appRoot, o
         scheduleSync,
         syncBounds,
         setStackAlwaysOnTop,
+        bringToFrontAfterStack,
+        handleDragStart,
+        handleDragEnd,
         sendState,
         sendBurst,
         hide,
