@@ -1,6 +1,8 @@
-# Kraken MP3 — User Guide
+# Kraken MP3 — User Guide (legacy single-window)
 
-Winamp-style desktop music player for Windows. This guide covers installation, supported formats, everyday use, and settings.
+> **Kraken MP3 Winamp v2** (multi-window docking) uses a separate guide: **[docs/V2_USER_GUIDE.md](docs/V2_USER_GUIDE.md)**. See **[docs/V1_VS_V2.md](docs/V1_VS_V2.md)** for which product to install.
+
+Winamp-style desktop music player for Windows. This guide covers the **legacy single-window** build (`npm start` / `build:v1:win` in this repo).
 
 ## Install
 

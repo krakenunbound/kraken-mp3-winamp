@@ -1,7 +1,14 @@
-# Install Kraken MP3 (latest build)
+# Install Kraken MP3 Winamp v2
 
-Use **`Kraken MP3 Setup 1.0.1.exe`** for a normal Windows install (Start menu + optional desktop shortcut).
+After `npm run build:v2:win`, the latest installers are copied here:
 
-Use **`Kraken MP3 1.0.1.exe`** if you want a portable copy with no installer.
+| File | Use |
+|------|-----|
+| **`Kraken MP3 Winamp v2 Setup 2.0.0.exe`** | Normal Windows install (Start menu + desktop shortcut) |
+| **`Kraken MP3 Winamp v2 2.0.0.exe`** | Portable — no installer |
 
-These files are copied here after `npm run build:win`. Installers are not stored in git (too large); rebuild locally or download from [GitHub Releases](https://github.com/krakenunbound/kraken-mp3-winamp/releases/latest).
+These `.exe` files are **not in git** (too large). Download from [GitHub Releases](https://github.com/krakenunbound/kraken-mp3-winamp/releases/latest) or rebuild locally.
+
+**Classic v1 installer:** [kraken-mp3 releases](https://github.com/krakenunbound/kraken-mp3/releases/latest) — different product; both can be installed together.
+
+**Documentation:** [docs/V2_USER_GUIDE.md](../docs/V2_USER_GUIDE.md)

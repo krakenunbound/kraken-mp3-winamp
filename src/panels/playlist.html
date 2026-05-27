@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kraken Playlist</title>
+    <link rel="stylesheet" href="../styles.css">
+    <style>
+        html, body { height: 100%; overflow: hidden; background: var(--panel-bg-dark); }
+        body.pl-standalone .pl-titlebar { -webkit-app-region: drag; }
+        body.pl-standalone .panel-titlebar-btns,
+        body.pl-standalone .playlist-body,
+        body.pl-standalone .playlist-footer,
+        body.pl-standalone button { -webkit-app-region: no-drag; }
+        .pl-standalone-root {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        .pl-standalone-root .winamp-panel {
+            flex: 1;
+            border: none;
+            min-height: 0;
+        }
+    </style>
+</head>
+<body class="pl-standalone theme-square">
+    <div class="pl-standalone-root">
+        <div class="winamp-panel playlist-panel" id="playlistPanel">
+            <div class="panel-titlebar pl-titlebar" id="plTitleBar">
+                <div class="panel-title-text">KRAKEN PLAYLIST</div>
+                <div class="panel-titlebar-btns">
+                    <button type="button" class="title-panel-btn dock-lock-btn is-locked" data-panel="playlist" title="Locked below equalizer — click to detach" aria-label="Dock lock">
+                        <svg class="dock-lock-icon" viewBox="0 0 16 16" width="10" height="10" aria-hidden="true">
+                            <g class="lock-closed"><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2" fill="none"/><rect x="4" y="7" width="8" height="6" rx="0.5"/></g>
+                            <g class="lock-open"><path d="M5.5 7V4.5a2.5 2.5 0 0 1 5 0" fill="none"/><rect x="4" y="7" width="8" height="6" rx="0.5"/></g>
+                        </svg>
+                    </button>
+                    <button class="title-panel-btn close-btn" id="btnPlClose" title="Close">×</button>
+                </div>
+            </div>
+            <div class="playlist-body" id="playlistDropZone">
+                <div id="playlistTracks" class="playlist-tracks">
+                    <div class="playlist-empty">
+                        <div class="pl-empty-icon">〜</div>
+                        <div>Drop audio files here or press ⏏ to open</div>
+                    </div>
+                </div>
+            </div>
+            <div class="playlist-footer">
+                <div class="pl-foot-left">
+                    <button class="pl-btn" id="plBtnAdd" title="Add Files">ADD</button>
+                    <button class="pl-btn" id="plBtnRem" title="Remove Selected">REM</button>
+                    <button class="pl-btn" id="plBtnSel" title="Select All">SEL</button>
+                    <button class="pl-btn" id="plBtnMisc" title="Options">MISC</button>
+                </div>
+                <div class="pl-foot-time">
+                    <span id="plCurrentTime">0:00</span>/<span id="totalTime">0:00</span>
+                </div>
+                <div class="pl-foot-right">
+                    <button class="pl-btn" id="plBtnFolder" title="Open Folder">FOLDER</button>
+                    <button class="pl-btn" id="plBtnClear" title="Clear Playlist">CLEAR</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="drop-overlay" id="dropOverlay">
+        <div class="drop-message">
+            <span>Drop audio files here</span>
+        </div>
+    </div>
+    <script src="playlist-renderer.js"></script>
+</body>
+</html>

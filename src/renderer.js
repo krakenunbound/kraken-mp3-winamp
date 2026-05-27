@@ -2,6 +2,16 @@ const { ipcRenderer } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
+function detectV2Docking() {
+    try {
+        if (/index-v2\.html$/i.test(window.location.pathname)) return true;
+        if (new URLSearchParams(window.location.search).get('v2') === '1') return true;
+    } catch (_) { /* ignore */ }
+    return process.argv.includes('--v2-docking');
+}
+const isV2Docking = detectV2Docking();
+if (isV2Docking) console.log('[Kraken] v2 docking mode — embedded EQ disabled');
+
 // Load music-metadata for ID3 tags
 let musicMetadata = null;
 try {
@@ -38,171 +48,17 @@ let albumArtBounce = {
     rotZ: 0, vRotZ: 45, lastTime: 0
 };
 
-// Color themes
-const COLOR_THEMES = {
-    kraken: {
-        name: 'Kraken', hueBase: 190, hueRange: 40, saturation: 80,
-        accentRgb: [59, 158, 190], bubbleHighRgb: [120, 200, 255], rainRgb: [150, 200, 255],
-        css: {
-            '--panel-bg': 'rgba(20, 28, 40, 0.75)', '--panel-bg-dark': 'rgba(10, 16, 24, 0.85)',
-            '--panel-title-bg': 'linear-gradient(180deg, rgba(26, 58, 85, 0.8) 0%, rgba(14, 32, 53, 0.8) 100%)',
-            '--bevel-light': '#2a4060', '--bevel-dark': '#050c14',
-            '--lcd-bg': 'rgba(6, 14, 20, 0.7)', '--lcd-text': '#3ce0f8',
-            '--lcd-text-dim': '#0a6070', '--lcd-glow': 'rgba(60, 224, 248, 0.5)',
-            '--lcd-glow-soft': 'rgba(60, 224, 248, 0.25)',
-            '--accent': '#3b9ebe', '--accent-bright': '#4fc8e8',
-            '--accent-glow': 'rgba(59, 158, 190, 0.45)',
-            '--text-hi': '#d8eaf8', '--text-mid': '#7a9ab8', '--text-lo': '#3a5878',
-            '--btn-bg': 'rgba(17, 26, 38, 0.8)', '--btn-hover': '#1a2a3c',
-            '--btn-active-bg': 'rgba(59,158,190,0.18)',
-            '--pl-row-odd': 'rgba(8,16,26,0.7)', '--pl-row-even': 'rgba(12,22,34,0.7)',
-            '--pl-active': 'rgba(59,158,190,0.22)', '--pl-selected': 'rgba(59,158,190,0.12)',
-            '--danger': '#e03333'
-        }
-    },
-    grayscale: {
-        name: 'Gray', hueBase: 0, hueRange: 0, saturation: 0,
-        accentRgb: [160, 160, 160], bubbleHighRgb: [200, 200, 200], rainRgb: [180, 180, 180],
-        css: {
-            '--panel-bg': 'rgba(28, 28, 28, 0.75)', '--panel-bg-dark': 'rgba(14, 14, 14, 0.85)',
-            '--panel-title-bg': 'linear-gradient(180deg, rgba(50, 50, 50, 0.8) 0%, rgba(30, 30, 30, 0.8) 100%)',
-            '--bevel-light': '#505050', '--bevel-dark': '#0a0a0a',
-            '--lcd-bg': 'rgba(10, 10, 10, 0.7)', '--lcd-text': '#d2d2d2',
-            '--lcd-text-dim': '#555555', '--lcd-glow': 'rgba(210, 210, 210, 0.5)',
-            '--lcd-glow-soft': 'rgba(210, 210, 210, 0.25)',
-            '--accent': '#a0a0a0', '--accent-bright': '#c8c8c8',
-            '--accent-glow': 'rgba(160, 160, 160, 0.45)',
-            '--text-hi': '#e8e8e8', '--text-mid': '#999999', '--text-lo': '#5a5a5a',
-            '--btn-bg': 'rgba(26, 26, 26, 0.8)', '--btn-hover': '#333333',
-            '--btn-active-bg': 'rgba(160,160,160,0.18)',
-            '--pl-row-odd': 'rgba(14,14,14,0.7)', '--pl-row-even': 'rgba(20,20,20,0.7)',
-            '--pl-active': 'rgba(160,160,160,0.22)', '--pl-selected': 'rgba(160,160,160,0.12)',
-            '--danger': '#e03333'
-        }
-    },
-    purple: {
-        name: 'Purple', hueBase: 270, hueRange: 40, saturation: 80,
-        accentRgb: [140, 80, 200], bubbleHighRgb: [180, 140, 255], rainRgb: [170, 150, 255],
-        css: {
-            '--panel-bg': 'rgba(28, 20, 40, 0.75)', '--panel-bg-dark': 'rgba(16, 10, 24, 0.85)',
-            '--panel-title-bg': 'linear-gradient(180deg, rgba(50, 26, 85, 0.8) 0%, rgba(30, 14, 53, 0.8) 100%)',
-            '--bevel-light': '#4a2a70', '--bevel-dark': '#0a050f',
-            '--lcd-bg': 'rgba(12, 6, 20, 0.7)', '--lcd-text': '#c88cff',
-            '--lcd-text-dim': '#5a2a80', '--lcd-glow': 'rgba(200, 140, 255, 0.5)',
-            '--lcd-glow-soft': 'rgba(200, 140, 255, 0.25)',
-            '--accent': '#8c50c8', '--accent-bright': '#af6eeb',
-            '--accent-glow': 'rgba(140, 80, 200, 0.45)',
-            '--text-hi': '#ecdcf8', '--text-mid': '#9a7ab8', '--text-lo': '#5a3a78',
-            '--btn-bg': 'rgba(26, 17, 38, 0.8)', '--btn-hover': '#2c1a3c',
-            '--btn-active-bg': 'rgba(140,80,200,0.18)',
-            '--pl-row-odd': 'rgba(16,8,26,0.7)', '--pl-row-even': 'rgba(22,12,34,0.7)',
-            '--pl-active': 'rgba(140,80,200,0.22)', '--pl-selected': 'rgba(140,80,200,0.12)',
-            '--danger': '#e03333'
-        }
-    },
-    red: {
-        name: 'Crimson', hueBase: 0, hueRange: 30, saturation: 80,
-        accentRgb: [200, 60, 60], bubbleHighRgb: [255, 140, 140], rainRgb: [255, 150, 150],
-        css: {
-            '--panel-bg': 'rgba(40, 20, 20, 0.75)', '--panel-bg-dark': 'rgba(24, 10, 10, 0.85)',
-            '--panel-title-bg': 'linear-gradient(180deg, rgba(85, 26, 26, 0.8) 0%, rgba(53, 14, 14, 0.8) 100%)',
-            '--bevel-light': '#703030', '--bevel-dark': '#0f0505',
-            '--lcd-bg': 'rgba(20, 6, 6, 0.7)', '--lcd-text': '#ff6464',
-            '--lcd-text-dim': '#802020', '--lcd-glow': 'rgba(255, 100, 100, 0.5)',
-            '--lcd-glow-soft': 'rgba(255, 100, 100, 0.25)',
-            '--accent': '#c83c3c', '--accent-bright': '#eb5a5a',
-            '--accent-glow': 'rgba(200, 60, 60, 0.45)',
-            '--text-hi': '#f8dada', '--text-mid': '#b87a7a', '--text-lo': '#783a3a',
-            '--btn-bg': 'rgba(38, 17, 17, 0.8)', '--btn-hover': '#3c1a1a',
-            '--btn-active-bg': 'rgba(200,60,60,0.18)',
-            '--pl-row-odd': 'rgba(26,8,8,0.7)', '--pl-row-even': 'rgba(34,12,12,0.7)',
-            '--pl-active': 'rgba(200,60,60,0.22)', '--pl-selected': 'rgba(200,60,60,0.12)',
-            '--danger': '#e03333'
-        }
-    },
-    blue: {
-        name: 'Sapphire', hueBase: 220, hueRange: 40, saturation: 80,
-        accentRgb: [60, 100, 200], bubbleHighRgb: [130, 180, 255], rainRgb: [140, 180, 255],
-        css: {
-            '--panel-bg': 'rgba(20, 24, 40, 0.75)', '--panel-bg-dark': 'rgba(10, 12, 24, 0.85)',
-            '--panel-title-bg': 'linear-gradient(180deg, rgba(26, 38, 85, 0.8) 0%, rgba(14, 20, 53, 0.8) 100%)',
-            '--bevel-light': '#2a3a70', '--bevel-dark': '#05080f',
-            '--lcd-bg': 'rgba(6, 10, 20, 0.7)', '--lcd-text': '#64a0ff',
-            '--lcd-text-dim': '#203870', '--lcd-glow': 'rgba(100, 160, 255, 0.5)',
-            '--lcd-glow-soft': 'rgba(100, 160, 255, 0.25)',
-            '--accent': '#3c64c8', '--accent-bright': '#5a87eb',
-            '--accent-glow': 'rgba(60, 100, 200, 0.45)',
-            '--text-hi': '#dae4f8', '--text-mid': '#7a8eb8', '--text-lo': '#3a4e78',
-            '--btn-bg': 'rgba(17, 20, 38, 0.8)', '--btn-hover': '#1a223c',
-            '--btn-active-bg': 'rgba(60,100,200,0.18)',
-            '--pl-row-odd': 'rgba(8,12,26,0.7)', '--pl-row-even': 'rgba(12,18,34,0.7)',
-            '--pl-active': 'rgba(60,100,200,0.22)', '--pl-selected': 'rgba(60,100,200,0.12)',
-            '--danger': '#e03333'
-        }
-    },
-    orange: {
-        name: 'Amber', hueBase: 30, hueRange: 30, saturation: 80,
-        accentRgb: [200, 130, 40], bubbleHighRgb: [255, 200, 120], rainRgb: [255, 210, 150],
-        css: {
-            '--panel-bg': 'rgba(40, 30, 20, 0.75)', '--panel-bg-dark': 'rgba(24, 16, 10, 0.85)',
-            '--panel-title-bg': 'linear-gradient(180deg, rgba(85, 58, 26, 0.8) 0%, rgba(53, 32, 14, 0.8) 100%)',
-            '--bevel-light': '#705028', '--bevel-dark': '#0f0a05',
-            '--lcd-bg': 'rgba(20, 12, 6, 0.7)', '--lcd-text': '#ffbe50',
-            '--lcd-text-dim': '#805820', '--lcd-glow': 'rgba(255, 190, 80, 0.5)',
-            '--lcd-glow-soft': 'rgba(255, 190, 80, 0.25)',
-            '--accent': '#c88228', '--accent-bright': '#eba53c',
-            '--accent-glow': 'rgba(200, 130, 40, 0.45)',
-            '--text-hi': '#f8ecd8', '--text-mid': '#b89a7a', '--text-lo': '#78583a',
-            '--btn-bg': 'rgba(38, 26, 17, 0.8)', '--btn-hover': '#3c2a1a',
-            '--btn-active-bg': 'rgba(200,130,40,0.18)',
-            '--pl-row-odd': 'rgba(26,16,8,0.7)', '--pl-row-even': 'rgba(34,22,12,0.7)',
-            '--pl-active': 'rgba(200,130,40,0.22)', '--pl-selected': 'rgba(200,130,40,0.12)',
-            '--danger': '#e03333'
-        }
-    },
-    green: {
-        name: 'Emerald', hueBase: 140, hueRange: 40, saturation: 80,
-        accentRgb: [40, 180, 100], bubbleHighRgb: [120, 235, 180], rainRgb: [150, 240, 200],
-        css: {
-            '--panel-bg': 'rgba(20, 36, 28, 0.75)', '--panel-bg-dark': 'rgba(10, 20, 14, 0.85)',
-            '--panel-title-bg': 'linear-gradient(180deg, rgba(26, 75, 50, 0.8) 0%, rgba(14, 45, 30, 0.8) 100%)',
-            '--bevel-light': '#2a6048', '--bevel-dark': '#050f0a',
-            '--lcd-bg': 'rgba(6, 18, 12, 0.7)', '--lcd-text': '#50f096',
-            '--lcd-text-dim': '#1a6840', '--lcd-glow': 'rgba(80, 240, 150, 0.5)',
-            '--lcd-glow-soft': 'rgba(80, 240, 150, 0.25)',
-            '--accent': '#28b464', '--accent-bright': '#3cd782',
-            '--accent-glow': 'rgba(40, 180, 100, 0.45)',
-            '--text-hi': '#d8f8e8', '--text-mid': '#7ab898', '--text-lo': '#3a7858',
-            '--btn-bg': 'rgba(17, 34, 24, 0.8)', '--btn-hover': '#1a3c28',
-            '--btn-active-bg': 'rgba(40,180,100,0.18)',
-            '--pl-row-odd': 'rgba(8,22,14,0.7)', '--pl-row-even': 'rgba(12,30,20,0.7)',
-            '--pl-active': 'rgba(40,180,100,0.22)', '--pl-selected': 'rgba(40,180,100,0.12)',
-            '--danger': '#e03333'
-        }
-    },
-    pink: {
-        name: 'Rose', hueBase: 330, hueRange: 40, saturation: 80,
-        accentRgb: [200, 70, 130], bubbleHighRgb: [255, 160, 210], rainRgb: [255, 180, 210],
-        css: {
-            '--panel-bg': 'rgba(40, 20, 30, 0.75)', '--panel-bg-dark': 'rgba(24, 10, 16, 0.85)',
-            '--panel-title-bg': 'linear-gradient(180deg, rgba(85, 26, 55, 0.8) 0%, rgba(53, 14, 34, 0.8) 100%)',
-            '--bevel-light': '#702a50', '--bevel-dark': '#0f0508',
-            '--lcd-bg': 'rgba(20, 6, 12, 0.7)', '--lcd-text': '#ff82be',
-            '--lcd-text-dim': '#80284a', '--lcd-glow': 'rgba(255, 130, 190, 0.5)',
-            '--lcd-glow-soft': 'rgba(255, 130, 190, 0.25)',
-            '--accent': '#c84682', '--accent-bright': '#eb64a0',
-            '--accent-glow': 'rgba(200, 70, 130, 0.45)',
-            '--text-hi': '#f8dae8', '--text-mid': '#b87a98', '--text-lo': '#783a58',
-            '--btn-bg': 'rgba(38, 17, 26, 0.8)', '--btn-hover': '#3c1a2a',
-            '--btn-active-bg': 'rgba(200,70,130,0.18)',
-            '--pl-row-odd': 'rgba(26,8,16,0.7)', '--pl-row-even': 'rgba(34,12,22,0.7)',
-            '--pl-active': 'rgba(200,70,130,0.22)', '--pl-selected': 'rgba(200,70,130,0.12)',
-            '--danger': '#e03333'
-        }
-    }
-};
+const {
+    PRESETS,
+    buildThemePayload,
+    applyThemePayload,
+    applyDockStackChrome,
+    getParticleTheme
+} = require('./shared/uiThemes');
+const { drawVisualizerMode, resetWaterfall } = require('./shared/canvasViz');
 
-let activeThemeColors = COLOR_THEMES.kraken;
+let activeThemeColors = getParticleTheme('kraken');
+let customThemeColors = {};
 
 // Per-effect settings - each effect has its own quantity, size, speed
 const defaultEffectSettings = {
@@ -254,6 +110,8 @@ let stereoPannerNode = null;
 // Panel visibility
 let showEqPanel = false;
 let showPlaylistPanel = true;
+let showVizPanel = true;
+let vizAlbumArtDataUrl = null;
 
 // Playlist metadata (durations, display titles)
 let playlistMeta = []; // array of {title, duration} per playlist index
@@ -277,6 +135,7 @@ let showRemainingTime = false;
 let audioContext = null;
 let analyser = null;
 let dataArray = null;
+let timeDomainArray = null;
 let audioSource = null;
 let eqPreampNode = null;
 let eqFilters = [];
@@ -334,6 +193,7 @@ const btnAlwaysOnTop = document.getElementById('btnAlwaysOnTop');
 // Panel toggle buttons
 const btnEqToggle = document.getElementById('btnEqToggle');
 const btnPlToggle = document.getElementById('btnPlToggle');
+const btnVizToggle = document.getElementById('btnVizToggle');
 const btnEqClose = document.getElementById('btnEqClose');
 const btnPlClose = document.getElementById('btnPlClose');
 const eqPanel = document.getElementById('eqPanel');
@@ -404,6 +264,11 @@ async function init() {
     // Setup event listeners
     setupEventListeners();
 
+    if (isV2Docking) {
+        setupDockLockUI();
+        document.body.classList.add('theme-square');
+    }
+
     // Start background rotation
     setInterval(rotateBackground, 30000);
 
@@ -419,6 +284,7 @@ function loadSettings() {
     currentEffect = settings.effect ?? 'bubbles';
     currentViz = settings.visualizer ?? 'none';
     currentTheme = settings.theme ?? 'kraken';
+    customThemeColors = settings.customThemeColors || {};
     floatArtMode = settings.floatArtMode ?? 'off';
     isShuffle = settings.shuffle ?? false;
     repeatMode = settings.repeat ?? 0;
@@ -446,8 +312,9 @@ function loadSettings() {
     effectSettings = perEffectSettings[currentEffect] || perEffectSettings.bubbles;
 
     // Panel visibility
-    showEqPanel = settings.showEqPanel ?? false;
+    showEqPanel = settings.showEqPanel ?? (isV2Docking ? true : false);
     showPlaylistPanel = settings.showPlaylistPanel ?? true;
+    showVizPanel = settings.showVizPanel ?? true;
 
     // Apply settings to UI
     if (isShuffle) btnShuffle.classList.add('active');
@@ -470,21 +337,23 @@ function loadSettings() {
 
     applyFloatArtMode(floatArtMode);
 
-    // Apply saved theme
-    activeThemeColors = COLOR_THEMES[currentTheme] || COLOR_THEMES.kraken;
-    const root = document.documentElement;
-    Object.entries(activeThemeColors.css).forEach(([prop, value]) => {
-        root.style.setProperty(prop, value);
-    });
-    document.querySelectorAll('.theme-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.theme === currentTheme);
-    });
+    applyTheme(currentTheme, { broadcast: false });
 
     updateEqUI();
     applyPanelVisibility();
+    if (isV2Docking && !showEqPanel) {
+        ipcRenderer.send('kraken:window:close-eq');
+    }
+    if (isV2Docking) {
+        broadcastVizConfig();
+        if (currentViz !== 'none' && showVizPanel) {
+            ipcRenderer.send('kraken:viz:ensure-visible');
+        }
+    }
 }
 
 function updateSlidersForCurrentEffect() {
+    if (!effectQuantitySlider) return;
     effectQuantitySlider.value = effectSettings.quantity;
     effectSizeSlider.value = effectSettings.size;
     effectSpeedSlider.value = effectSettings.speed;
@@ -494,8 +363,9 @@ function updateSlidersForCurrentEffect() {
 }
 
 function updateEqUI() {
+    if (!eqToggle) return;
     eqToggle.classList.toggle('active', eqEnabled);
-    eqToggle.textContent = eqEnabled ? 'ON' : 'ON';
+    eqToggle.textContent = eqEnabled ? 'ON' : 'OFF';
     if (eqPresetSelect) eqPresetSelect.value = eqPreset;
     if (eqPreampSlider) eqPreampSlider.value = eqPreampDb;
     if (eqPreampVal) eqPreampVal.textContent = `${eqPreampDb > 0 ? '+' : ''}${eqPreampDb} dB preamp`;
@@ -535,17 +405,272 @@ function applyEqSettings() {
     });
 }
 
+function applyEqFromRemote(payload) {
+    if (!payload) return;
+    eqEnabled = payload.enabled ?? eqEnabled;
+    eqPreampDb = payload.preamp ?? eqPreampDb;
+    if (Array.isArray(payload.bands) && payload.bands.length === eqFrequencies.length) {
+        eqBandGains = [...payload.bands];
+    }
+    eqPreset = payload.preset ?? eqPreset;
+    if (!isV2Docking) updateEqUI();
+    applyEqSettings();
+    saveSettings();
+}
+
+window.getEqStateForIpc = function getEqStateForIpc() {
+    return {
+        enabled: eqEnabled,
+        preamp: eqPreampDb,
+        bands: [...eqBandGains],
+        preset: eqPreset
+    };
+};
+
+if (isV2Docking) {
+    ipcRenderer.on('kraken:eq:apply', (_event, payload) => applyEqFromRemote(payload));
+    ipcRenderer.on('kraken:v2-mode', () => {
+        if (eqPanel) eqPanel.style.display = 'none';
+        applyPanelVisibility();
+    });
+    ipcRenderer.on('kraken:playlist:push-sync', () => broadcastPlaylistState());
+    ipcRenderer.on('kraken:playlist:action', (_event, payload) => handlePlaylistPanelAction(payload));
+    ipcRenderer.on('kraken:playlist:visibility', (_event, visible) => {
+        showPlaylistPanel = !!visible;
+        if (btnPlToggle) btnPlToggle.classList.toggle('active', showPlaylistPanel);
+        saveSettings();
+    });
+    ipcRenderer.on('kraken:viz:visibility', (_event, visible) => {
+        showVizPanel = !!visible;
+        if (btnVizToggle) btnVizToggle.classList.toggle('active', showVizPanel);
+        saveSettings();
+    });
+    ipcRenderer.on('kraken:viz:request-sync', () => {
+        broadcastVizConfig();
+        refreshVizAlbumArtIpc();
+    });
+    ipcRenderer.on('kraken:effects:apply', (_event, payload) => handleEffectsPanelApply(payload));
+    ipcRenderer.on('kraken:effects:request-sync', () => broadcastEffectsState());
+    ipcRenderer.on('kraken:effects:visibility', (_event, visible) => {
+        if (btnEffects) btnEffects.classList.toggle('active', !!visible);
+    });
+}
+
+window.getEffectsStateForIpc = function getEffectsStateForIpc() {
+    return {
+        effect: currentEffect,
+        visualizer: currentViz,
+        floatArtMode,
+        theme: currentTheme,
+        customThemeColors: { ...customThemeColors },
+        effectSettings: { ...effectSettings }
+    };
+};
+
+window.getThemePayloadForIpc = function getThemePayloadForIpc() {
+    return buildThemePayload(currentTheme, customThemeColors);
+};
+
+function broadcastEffectsState() {
+    if (!isV2Docking) return;
+    ipcRenderer.send('kraken:effects:state', getEffectsStateForIpc());
+}
+
+function handleEffectsPanelApply(payload) {
+    if (!payload || !payload.action) return;
+    switch (payload.action) {
+        case 'set-effect':
+            currentEffect = payload.effect;
+            effectSettings = perEffectSettings[currentEffect] || perEffectSettings.bubbles;
+            if (bubblesCanvas) initEffectParticles();
+            saveSettings();
+            broadcastEffectsState();
+            break;
+        case 'set-viz': {
+            const prev = currentViz;
+            currentViz = payload.visualizer;
+            if (prev !== currentViz && (prev === 'waterfall' || currentViz === 'waterfall')) {
+                resetWaterfall();
+            }
+            onVizModeChanged();
+            break;
+        }
+            saveSettings();
+            broadcastEffectsState();
+            break;
+        case 'set-float-art':
+            applyFloatArtMode(payload.floatArtMode);
+            document.querySelectorAll('.effect-btn[data-float-art]').forEach((b) => {
+                b.classList.toggle('active', b.dataset.floatArt === floatArtMode);
+            });
+            saveSettings();
+            broadcastEffectsState();
+            break;
+        case 'set-theme':
+            applyTheme(payload.theme);
+            break;
+        case 'set-custom-color':
+            if (payload.key && payload.value) {
+                customThemeColors[payload.key] = payload.value;
+            }
+            applyTheme(currentTheme, { broadcastEffects: false });
+            break;
+        case 'reset-custom-colors':
+            customThemeColors = {};
+            applyTheme(currentTheme);
+            break;
+        case 'set-slider': {
+            const key = payload.key;
+            const val = payload.value;
+            if (key === 'quantity') effectSettings.quantity = val;
+            else if (key === 'size') effectSettings.size = val;
+            else if (key === 'speed') effectSettings.speed = val;
+            perEffectSettings[currentEffect][key] = val;
+            if (!isV2Docking && bubblesCanvas) initEffectParticles();
+            saveSettings();
+            broadcastEffectsState();
+            break;
+        }
+        default:
+            break;
+    }
+}
+
+window.getVizConfigForIpc = function getVizConfigForIpc() {
+    return {
+        themeId: currentTheme,
+        mode: currentViz,
+        floatArtMode
+    };
+};
+
+window.getVizAlbumArtForIpc = function getVizAlbumArtForIpc() {
+    return { url: vizAlbumArtDataUrl, mode: floatArtMode };
+};
+
+function broadcastVizConfig() {
+    if (!isV2Docking) return;
+    ipcRenderer.send('kraken:viz:config', {
+        themeId: currentTheme,
+        mode: currentViz,
+        floatArtMode
+    });
+}
+
+function broadcastVizFrame() {
+    if (!isV2Docking || !showVizPanel || currentViz === 'none' || !analyser || !dataArray) return;
+    analyser.getByteFrequencyData(dataArray);
+    const payload = { mode: currentViz, freq: Uint8Array.from(dataArray) };
+    if (currentViz === 'wave' && timeDomainArray) {
+        analyser.getByteTimeDomainData(timeDomainArray);
+        payload.wave = timeDomainArray;
+    }
+    ipcRenderer.send('kraken:viz:frame', payload);
+}
+
+async function refreshVizAlbumArtIpc() {
+    if (!isV2Docking) return;
+    if (!currentAlbumArtUrl || floatArtMode === 'off') {
+        vizAlbumArtDataUrl = null;
+        ipcRenderer.send('kraken:viz:album-art', { url: null, mode: floatArtMode });
+        return;
+    }
+    try {
+        const resp = await fetch(currentAlbumArtUrl);
+        const blob = await resp.blob();
+        vizAlbumArtDataUrl = await new Promise((resolve, reject) => {
+            const fr = new FileReader();
+            fr.onload = () => resolve(fr.result);
+            fr.onerror = reject;
+            fr.readAsDataURL(blob);
+        });
+        ipcRenderer.send('kraken:viz:album-art', { url: vizAlbumArtDataUrl, mode: floatArtMode });
+    } catch (err) {
+        console.error('viz album art IPC:', err);
+    }
+}
+
+function onVizModeChanged() {
+    broadcastVizConfig();
+    if (!isV2Docking) return;
+    if (currentViz === 'none') {
+        ipcRenderer.send('kraken:window:close-viz');
+    } else {
+        ipcRenderer.send('kraken:viz:ensure-visible');
+    }
+}
+
+function applyDockLockState(state) {
+    if (!state) return;
+    applyDockStackChrome(document, 'main', state);
+    document.querySelectorAll('.dock-lock-btn').forEach((btn) => {
+        const panel = btn.dataset.panel;
+        if (!panel || !state[panel]) return;
+        const locked = !!state[panel].locked;
+        btn.classList.remove('dock-lock-pending');
+        btn.classList.toggle('is-locked', locked);
+        btn.classList.toggle('is-unlocked', !locked);
+        if (panel === 'main') {
+            btn.title = locked
+                ? 'Stack grouped — click to regroup / snap all panels to main'
+                : 'Panels scattered — click to regroup into Winamp stack';
+        } else {
+            btn.title = locked
+                ? 'Magnetically docked — click to detach (or drag away)'
+                : 'Detached — drag near another panel edge to snap';
+        }
+    });
+}
+
+function showDockMessage(message) {
+    let toast = document.getElementById('dockToast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'dockToast';
+        toast.style.cssText = [
+            'position:fixed', 'bottom:12px', 'left:50%', 'transform:translateX(-50%)',
+            'padding:6px 12px', 'background:rgba(10,16,24,0.92)', 'border:1px solid var(--accent)',
+            'color:var(--lcd-text)', 'font-size:10px', 'z-index:9999', 'pointer-events:none',
+            'transition:opacity 0.3s', 'opacity:0'
+        ].join(';');
+        document.body.appendChild(toast);
+    }
+    toast.textContent = message;
+    toast.style.opacity = '1';
+    clearTimeout(showDockMessage._hideTimer);
+    showDockMessage._hideTimer = setTimeout(() => { toast.style.opacity = '0'; }, 2800);
+}
+
+function setupDockLockUI() {
+    document.querySelectorAll('.dock-lock-btn').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const panel = btn.dataset.panel || 'eq';
+            if (panel === 'main') {
+                ipcRenderer.send('kraken:dock:regroup');
+            } else {
+                ipcRenderer.send('kraken:dock:toggle', { panel });
+            }
+        });
+    });
+    ipcRenderer.on('kraken:dock:state', (_event, state) => applyDockLockState(state));
+    ipcRenderer.on('kraken:dock:message', (_event, message) => showDockMessage(message));
+    ipcRenderer.invoke('kraken:dock:get-state').then(applyDockLockState).catch(() => {});
+}
+
 function saveSettings() {
     localStorage.setItem('krakenMp3Settings', JSON.stringify({
         volume: volumeSlider.value,
         effect: currentEffect,
         visualizer: currentViz,
         theme: currentTheme,
+        customThemeColors,
         perEffectSettings,
         shuffle: isShuffle,
         repeat: repeatMode,
         showEqPanel,
         showPlaylistPanel,
+        showVizPanel,
         floatArtMode,
         eq: {
             enabled: eqEnabled,
@@ -626,8 +751,9 @@ function initAudioContext() {
     try {
         audioContext = new (window.AudioContext || window.webkitAudioContext)();
         analyser = audioContext.createAnalyser();
-        analyser.fftSize = 256;
+        analyser.fftSize = 512;
         dataArray = new Uint8Array(analyser.frequencyBinCount);
+        timeDomainArray = new Uint8Array(analyser.frequencyBinCount);
 
         // Connect audio element to analyser (with EQ chain)
         audioSource = audioContext.createMediaElementSource(audio);
@@ -666,10 +792,12 @@ function initAudioContext() {
 // CANVAS SETUP
 // ============================================================================
 function initCanvases() {
+    if (miniVizCanvas) miniVizCtx = miniVizCanvas.getContext('2d');
+    if (isV2Docking) return;
+    if (!bubblesCanvas || !particlesCanvas) return;
     bubblesCtx = bubblesCanvas.getContext('2d');
     particlesCtx = particlesCanvas.getContext('2d');
-    visualizerCtx = visualizerCanvas.getContext('2d');
-    if (miniVizCanvas) miniVizCtx = miniVizCanvas.getContext('2d');
+    if (visualizerCanvas) visualizerCtx = visualizerCanvas.getContext('2d');
 
     resizeCanvases();
     initEffectParticles();
@@ -681,16 +809,23 @@ function resizeCanvases() {
     const width = window.innerWidth;
     const height = window.innerHeight;
 
-    bubblesCanvas.width = width;
-    bubblesCanvas.height = height;
-    particlesCanvas.width = width;
-    particlesCanvas.height = height;
-    visualizerCanvas.width = width;
-    visualizerCanvas.height = height; // Full height for circle visualizer
+    if (bubblesCanvas) {
+        bubblesCanvas.width = width;
+        bubblesCanvas.height = height;
+    }
+    if (particlesCanvas) {
+        particlesCanvas.width = width;
+        particlesCanvas.height = height;
+    }
+    if (visualizerCanvas) {
+        visualizerCanvas.width = width;
+        visualizerCanvas.height = height;
+    }
 }
 
 function initEffectParticles() {
     effectParticles = [];
+    if (!bubblesCanvas && !isV2Docking) return;
     const count = effectSettings.quantity;
 
     for (let i = 0; i < count; i++) {
@@ -704,7 +839,7 @@ function initEffectParticles() {
 // We scale these so middle values (50) feel natural
 // ============================================================================
 function createEffectParticle(randomY = false) {
-    const canvas = bubblesCanvas;
+    const canvas = bubblesCanvas || { width: 500, height: 600 };
     // Scale settings so slider middle (50) feels right
     const sizeScale = effectSettings.size / 10;      // 0.1 to 2.0
     const speedScale = effectSettings.speed / 50;    // 0.02 to 2.0
@@ -845,6 +980,10 @@ function revokeAlbumArtUrl() {
 
 function applyFloatArtMode(mode) {
     floatArtMode = mode;
+    if (isV2Docking) {
+        refreshVizAlbumArtIpc();
+        return;
+    }
     if (!floatingAlbumStage) return;
 
     floatingAlbumStage.classList.remove('mode-float', 'mode-bounce', 'active');
@@ -858,6 +997,10 @@ function applyFloatArtMode(mode) {
 }
 
 function syncFloatingAlbumArt() {
+    if (isV2Docking) {
+        refreshVizAlbumArtIpc();
+        return;
+    }
     if (!floatingAlbumStage || !floatingAlbumImg) return;
 
     const show = floatArtMode !== 'off' && !!currentAlbumArtUrl;
@@ -951,16 +1094,18 @@ function animationLoop(time = 0) {
         visualizerCtx.clearRect(0, 0, visualizerCanvas.width, visualizerCanvas.height);
     }
 
-    // Draw effect particles
-    if (currentEffect !== 'none') {
-        drawEffectParticles(dt, time);
+    // Draw effect particles (legacy single-window only; v2 uses overlay — Phase 3)
+    if (!isV2Docking) {
+        if (currentEffect !== 'none') {
+            drawEffectParticles(dt, time);
+        }
+        drawBurstParticles(dt);
     }
 
-    // Draw burst particles
-    drawBurstParticles(dt);
-
-    // Draw visualizer
-    if (currentViz !== 'none' && analyser) {
+    // Draw visualizer (v2 uses satellite window)
+    if (isV2Docking) {
+        broadcastVizFrame();
+    } else if (currentViz !== 'none' && analyser) {
         drawVisualizer();
     }
 
@@ -969,7 +1114,7 @@ function animationLoop(time = 0) {
         drawMiniViz();
     }
 
-    tickFloatArtBounce();
+    if (!isV2Docking) tickFloatArtBounce();
 
     requestAnimationFrame(animationLoop);
 }
@@ -1293,6 +1438,11 @@ function createBurstParticle(x, y) {
 }
 
 function triggerTrackChangeEffect() {
+    if (isV2Docking) {
+        ipcRenderer.send('kraken:effects:burst');
+        return;
+    }
+    if (!particlesCanvas) return;
     const centerX = particlesCanvas.width / 2;
     const centerY = particlesCanvas.height / 2;
 
@@ -1329,107 +1479,26 @@ function drawBurstParticles(dt) {
 // AUDIO VISUALIZERS
 // ============================================================================
 function drawVisualizer() {
-    if (!analyser || !dataArray) return;
+    if (!visualizerCtx || !analyser || !dataArray) return;
 
     analyser.getByteFrequencyData(dataArray);
-
-    switch (currentViz) {
-        case 'bars':
-            drawBarsVisualizer();
-            break;
-        case 'wave':
-            drawWaveVisualizer();
-            break;
-        case 'circle':
-            drawCircleVisualizer();
-            break;
-    }
-}
-
-function drawBarsVisualizer() {
     const canvas = visualizerCanvas;
     const ctx = visualizerCtx;
-    const bufferLength = analyser.frequencyBinCount;
-    const barWidth = canvas.width / bufferLength * 2.5;
-    let x = 0;
+    const theme = activeThemeColors;
 
-    for (let i = 0; i < bufferLength; i++) {
-        const barHeight = (dataArray[i] / 255) * canvas.height;
-
-        const hue = activeThemeColors.hueBase + (i / bufferLength) * activeThemeColors.hueRange;
-        ctx.fillStyle = `hsla(${hue}, ${activeThemeColors.saturation}%, 50%, 0.8)`;
-        ctx.fillRect(x, canvas.height - barHeight, barWidth - 1, barHeight);
-
-        x += barWidth;
-    }
-}
-
-function drawWaveVisualizer() {
-    const canvas = visualizerCanvas;
-    const ctx = visualizerCtx;
-    const bufferLength = analyser.frequencyBinCount;
-
-    analyser.getByteTimeDomainData(dataArray);
-
-    ctx.lineWidth = 2;
-    const [ar, ag, ab] = activeThemeColors.accentRgb;
-    ctx.strokeStyle = `rgba(${ar}, ${ag}, ${ab}, 0.8)`;
-    ctx.beginPath();
-
-    const sliceWidth = canvas.width / bufferLength;
-    let x = 0;
-
-    for (let i = 0; i < bufferLength; i++) {
-        const v = dataArray[i] / 128.0;
-        const y = (v * canvas.height) / 2;
-
-        if (i === 0) {
-            ctx.moveTo(x, y);
-        } else {
-            ctx.lineTo(x, y);
+    if (currentViz === 'wave' && timeDomainArray) {
+        analyser.getByteTimeDomainData(timeDomainArray);
+        if (currentViz !== 'waterfall') {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
         }
-
-        x += sliceWidth;
+        drawVisualizerMode(ctx, canvas, currentViz, dataArray, timeDomainArray, theme);
+        return;
     }
 
-    ctx.lineTo(canvas.width, canvas.height / 2);
-    ctx.stroke();
-}
-
-function drawCircleVisualizer() {
-    const canvas = visualizerCanvas;
-    const ctx = visualizerCtx;
-    const centerX = canvas.width / 2;
-    const centerY = canvas.height / 2;  // True center
-    const radius = Math.min(canvas.width, canvas.height) * 0.15;  // Scale to window
-    const bufferLength = analyser.frequencyBinCount;
-    const maxBarHeight = radius * 0.8;
-
-    // Draw full 360 degree circle
-    for (let i = 0; i < bufferLength; i++) {
-        const angle = (i / bufferLength) * Math.PI * 2 - Math.PI / 2; // Start from top
-        const barHeight = (dataArray[i] / 255) * maxBarHeight;
-
-        const x1 = centerX + Math.cos(angle) * radius;
-        const y1 = centerY + Math.sin(angle) * radius;
-        const x2 = centerX + Math.cos(angle) * (radius + barHeight);
-        const y2 = centerY + Math.sin(angle) * (radius + barHeight);
-
-        const hue = activeThemeColors.hueBase + (i / bufferLength) * (activeThemeColors.hueRange * 1.5);
-        ctx.strokeStyle = `hsla(${hue}, ${activeThemeColors.saturation}%, 55%, 0.7)`;
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(x1, y1);
-        ctx.lineTo(x2, y2);
-        ctx.stroke();
+    if (currentViz !== 'waterfall') {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
-
-    // Inner glow circle
-    const [cr, cg, cb] = activeThemeColors.accentRgb;
-    ctx.beginPath();
-    ctx.arc(centerX, centerY, radius * 0.3, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(${cr}, ${cg}, ${cb}, 0.1)`;
-    ctx.fill();
+    drawVisualizerMode(ctx, canvas, currentViz, dataArray, null, theme);
 }
 
 // ============================================================================
@@ -1458,9 +1527,10 @@ function setupEventListeners() {
     // Open files
     btnOpen.addEventListener('click', openFileMenu);
 
-    // Effects menu
-    btnEffects.addEventListener('click', toggleEffectsMenu);
+    // Effects menu (v2 opens satellite window via IPC)
+    if (btnEffects) btnEffects.addEventListener('click', toggleEffectsMenu);
 
+    if (!isV2Docking) {
     // Effect buttons - switch to per-effect settings when changing effects
     document.querySelectorAll('.effect-btn[data-effect]').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -1480,9 +1550,14 @@ function setupEventListeners() {
     // Visualizer buttons
     document.querySelectorAll('.effect-btn[data-viz]').forEach(btn => {
         btn.addEventListener('click', () => {
+            const prev = currentViz;
             currentViz = btn.dataset.viz;
+            if (prev !== currentViz && (prev === 'waterfall' || currentViz === 'waterfall')) {
+                resetWaterfall();
+            }
             document.querySelectorAll('.effect-btn[data-viz]').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
+            onVizModeChanged();
             saveSettings();
         });
     });
@@ -1506,8 +1581,12 @@ function setupEventListeners() {
 
     if (plBtnMisc) {
         plBtnMisc.addEventListener('click', () => {
-            effectsMenu.classList.add('active');
-            btnEffects.classList.add('active');
+            if (isV2Docking) {
+                ipcRenderer.send('kraken:window:toggle-effects');
+            } else if (effectsMenu) {
+                effectsMenu.classList.add('active');
+                btnEffects.classList.add('active');
+            }
         });
     }
 
@@ -1539,45 +1618,47 @@ function setupEventListeners() {
         saveSettings();
     });
 
-    // Graphic EQ
-    eqToggle.addEventListener('click', () => {
-        eqEnabled = !eqEnabled;
-        updateEqUI();
-        applyEqSettings();
-        saveSettings();
-    });
-
-    eqReset.addEventListener('click', () => {
-        setEqPreset('flat');
-    });
-
-    eqPresetSelect.addEventListener('change', () => {
-        const presetName = eqPresetSelect.value;
-        if (presetName === 'custom') {
-            markEqCustom();
+    // Graphic EQ (embedded panel — legacy mode only)
+    if (!isV2Docking && eqToggle) {
+        eqToggle.addEventListener('click', () => {
+            eqEnabled = !eqEnabled;
+            updateEqUI();
+            applyEqSettings();
             saveSettings();
-            return;
-        }
-        setEqPreset(presetName);
-    });
+        });
 
-    eqPreampSlider.addEventListener('input', () => {
-        eqPreampDb = parseFloat(eqPreampSlider.value);
-        eqPreampVal.textContent = `${eqPreampDb} dB`;
-        markEqCustom();
-        applyEqSettings();
-        saveSettings();
-    });
+        eqReset.addEventListener('click', () => {
+            setEqPreset('flat');
+        });
 
-    eqBandSliders.forEach((slider) => {
-        slider.addEventListener('input', () => {
-            const bandIndex = parseInt(slider.dataset.band, 10);
-            eqBandGains[bandIndex] = parseFloat(slider.value);
+        eqPresetSelect.addEventListener('change', () => {
+            const presetName = eqPresetSelect.value;
+            if (presetName === 'custom') {
+                markEqCustom();
+                saveSettings();
+                return;
+            }
+            setEqPreset(presetName);
+        });
+
+        eqPreampSlider.addEventListener('input', () => {
+            eqPreampDb = parseFloat(eqPreampSlider.value);
+            eqPreampVal.textContent = `${eqPreampDb} dB`;
             markEqCustom();
             applyEqSettings();
             saveSettings();
         });
-    });
+
+        eqBandSliders.forEach((slider) => {
+            slider.addEventListener('input', () => {
+                const bandIndex = parseInt(slider.dataset.band, 10);
+                eqBandGains[bandIndex] = parseFloat(slider.value);
+                markEqCustom();
+                applyEqSettings();
+                saveSettings();
+            });
+        });
+    }
 
     // Close effects menu when clicking outside
     document.addEventListener('click', (e) => {
@@ -1586,6 +1667,7 @@ function setupEventListeners() {
             btnEffects.classList.remove('active');
         }
     });
+    }
 
     // Progress bar
     progressContainer.addEventListener('click', handleProgressClick);
@@ -1664,12 +1746,55 @@ function setupEventListeners() {
     }
 
     // EQ panel toggle (title bar button)
-    if (btnEqToggle) btnEqToggle.addEventListener('click', () => { showEqPanel = !showEqPanel; applyPanelVisibility(); saveSettings(); });
-    if (btnEqClose) btnEqClose.addEventListener('click', () => { showEqPanel = false; applyPanelVisibility(); saveSettings(); });
+    if (btnEqToggle) {
+        btnEqToggle.addEventListener('click', () => {
+            if (isV2Docking) {
+                showEqPanel = !showEqPanel;
+                ipcRenderer.send('kraken:window:toggle-eq');
+                btnEqToggle.classList.toggle('active', showEqPanel);
+                saveSettings();
+                return;
+            }
+            showEqPanel = !showEqPanel;
+            applyPanelVisibility();
+            saveSettings();
+        });
+    }
+    if (btnEqClose && !isV2Docking) {
+        btnEqClose.addEventListener('click', () => {
+            showEqPanel = false;
+            applyPanelVisibility();
+            saveSettings();
+        });
+    }
 
     // Playlist panel toggle
-    if (btnPlToggle) btnPlToggle.addEventListener('click', () => { showPlaylistPanel = !showPlaylistPanel; applyPanelVisibility(); saveSettings(); });
-    if (btnPlClose) btnPlClose.addEventListener('click', () => { showPlaylistPanel = false; applyPanelVisibility(); saveSettings(); });
+    if (btnPlToggle) {
+        btnPlToggle.addEventListener('click', () => {
+            if (isV2Docking) {
+                ipcRenderer.send('kraken:window:toggle-playlist');
+                return;
+            }
+            showPlaylistPanel = !showPlaylistPanel;
+            applyPanelVisibility();
+            saveSettings();
+        });
+    }
+    if (btnVizToggle) {
+        btnVizToggle.addEventListener('click', () => {
+            if (isV2Docking) {
+                ipcRenderer.send('kraken:window:toggle-viz');
+                return;
+            }
+        });
+    }
+    if (btnPlClose && !isV2Docking) {
+        btnPlClose.addEventListener('click', () => {
+            showPlaylistPanel = false;
+            applyPanelVisibility();
+            saveSettings();
+        });
+    }
 
     // Playlist footer buttons
     if (plBtnAdd) plBtnAdd.addEventListener('click', openFiles);
@@ -1700,6 +1825,11 @@ function setupEventListeners() {
 }
 
 function toggleEffectsMenu() {
+    if (isV2Docking) {
+        ipcRenderer.send('kraken:window:toggle-effects');
+        return;
+    }
+    if (!effectsMenu) return;
     effectsMenu.classList.toggle('active');
     btnEffects.classList.toggle('active', effectsMenu.classList.contains('active'));
 }
@@ -1928,21 +2058,36 @@ function updateBalanceIndicator() {
 // ============================================================================
 // COLOR THEMES
 // ============================================================================
-function applyTheme(themeId) {
-    const theme = COLOR_THEMES[themeId];
-    if (!theme) return;
+function applyTheme(themeId, options = {}) {
+    const preset = PRESETS[themeId];
+    if (!preset) return;
     currentTheme = themeId;
-    activeThemeColors = theme;
+    const payload = buildThemePayload(themeId, customThemeColors);
+    activeThemeColors = {
+        hueBase: preset.hueBase,
+        hueRange: preset.hueRange,
+        saturation: preset.saturation,
+        accentRgb: [...preset.accentRgb],
+        bubbleHighRgb: [...preset.bubbleHighRgb],
+        rainRgb: [...preset.rainRgb],
+        css: payload.css
+    };
 
-    const root = document.documentElement;
-    Object.entries(theme.css).forEach(([prop, value]) => {
-        root.style.setProperty(prop, value);
-    });
+    applyThemePayload(document, payload);
 
-    document.querySelectorAll('.theme-btn').forEach(btn => {
+    document.querySelectorAll('.theme-btn').forEach((btn) => {
         btn.classList.toggle('active', btn.dataset.theme === themeId);
     });
 
+    broadcastVizConfig();
+    if (options.broadcast !== false) {
+        if (options.broadcastEffects !== false) {
+            broadcastEffectsState();
+        }
+        if (isV2Docking) {
+            ipcRenderer.send('kraken:theme:broadcast', payload);
+        }
+    }
     saveSettings();
 }
 
@@ -1972,7 +2117,13 @@ function updateProgress() {
     } else {
         currentTimeEl.textContent = formatTime(audio.currentTime);
     }
-    if (plCurrentTime) plCurrentTime.textContent = formatTime(audio.currentTime);
+    if (isV2Docking) {
+        ipcRenderer.send('kraken:playlist:time', {
+            plCurrentTime: formatTime(audio.currentTime)
+        });
+    } else if (plCurrentTime) {
+        plCurrentTime.textContent = formatTime(audio.currentTime);
+    }
 }
 
 function handleMetadataLoaded() {
@@ -2044,6 +2195,31 @@ async function openFolder() {
     }
 }
 
+async function processDroppedPaths(items) {
+    if (!items || items.length === 0) return;
+
+    if (isPlaying) pause();
+
+    let newFiles = [];
+    for (const itemPath of items) {
+        if (!itemPath) continue;
+        try {
+            const stat = fs.statSync(itemPath);
+            if (stat.isDirectory()) {
+                newFiles = newFiles.concat(scanFolderRecursive(itemPath));
+            } else if (isAudioFile(itemPath)) {
+                newFiles.push(itemPath);
+            }
+        } catch (err) {
+            console.error('Error processing dropped item:', itemPath, err);
+        }
+    }
+
+    if (newFiles.length > 0) {
+        replacePlaylist(newFiles);
+    }
+}
+
 async function handleDrop(e) {
     e.preventDefault();
     e.stopPropagation();
@@ -2056,32 +2232,7 @@ async function handleDrop(e) {
         }
     }
 
-    if (items.length > 0) {
-        // Stop current playback
-        if (isPlaying) {
-            pause();
-        }
-
-        // Collect new tracked files
-        let newFiles = [];
-
-        for (const itemPath of items) {
-            try {
-                const stat = fs.statSync(itemPath);
-                if (stat.isDirectory()) {
-                    newFiles = newFiles.concat(scanFolderRecursive(itemPath));
-                } else if (isAudioFile(itemPath)) {
-                    newFiles.push(itemPath);
-                }
-            } catch (err) {
-                console.error('Error procesing dropped item:', itemPath, err);
-            }
-        }
-
-        if (newFiles.length > 0) {
-            replacePlaylist(newFiles);
-        }
-    }
+    await processDroppedPaths(items);
 }
 
 function scanFolderRecursive(dir) {
@@ -2468,6 +2619,13 @@ function stopAudio() {
 // PANEL VISIBILITY
 // ============================================================================
 function applyPanelVisibility() {
+    if (isV2Docking) {
+        if (eqPanel) eqPanel.style.display = 'none';
+        if (btnEqToggle) btnEqToggle.classList.toggle('active', showEqPanel);
+        if (btnPlToggle) btnPlToggle.classList.toggle('active', showPlaylistPanel);
+        if (btnVizToggle) btnVizToggle.classList.toggle('active', showVizPanel);
+        return;
+    }
     if (eqPanel) eqPanel.style.display = showEqPanel ? '' : 'none';
     if (playlistPanel) playlistPanel.style.display = showPlaylistPanel ? '' : 'none';
     if (btnEqToggle) btnEqToggle.classList.toggle('active', showEqPanel);
@@ -2477,7 +2635,98 @@ function applyPanelVisibility() {
 // ============================================================================
 // PLAYLIST RENDER
 // ============================================================================
+function buildPlaylistIpcState() {
+    let totalSecs = 0;
+    playlistMeta.forEach((m) => { if (m && m.duration) totalSecs += m.duration; });
+    const tracks = playlist.map((filePath, i) => {
+        const meta = playlistMeta[i];
+        const dur = (meta && meta.duration) ? formatTime(meta.duration) : '?:??';
+        const name = meta && meta.title
+            ? (meta.artist ? `${meta.artist} - ${meta.title}` : meta.title)
+            : path.basename(filePath, path.extname(filePath));
+        return {
+            index: i,
+            name,
+            dur,
+            isActive: i === currentIndex,
+            isSelected: i === selectedPlaylistIdx
+        };
+    });
+    return {
+        tracks,
+        plCurrentTime: formatTime(audio.currentTime || 0),
+        totalTime: formatTime(totalSecs),
+        selectedIndex: selectedPlaylistIdx
+    };
+}
+
+function broadcastPlaylistState() {
+    if (!isV2Docking) return;
+    ipcRenderer.send('kraken:playlist:state', buildPlaylistIpcState());
+}
+
+async function handlePlaylistPanelAction(payload) {
+    if (!payload || !payload.action) return;
+    const { action } = payload;
+    switch (action) {
+        case 'select':
+            selectedPlaylistIdx = payload.index;
+            broadcastPlaylistState();
+            break;
+        case 'play':
+            currentIndex = payload.index;
+            selectedPlaylistIdx = payload.index;
+            await loadTrack(payload.index);
+            play();
+            renderPlaylist();
+            break;
+        case 'add-files':
+            await openFiles();
+            break;
+        case 'open-folder':
+            await openFolder();
+            break;
+        case 'clear':
+            playlist = [];
+            playlistMeta = [];
+            currentIndex = 0;
+            selectedPlaylistIdx = -1;
+            stopAudio();
+            renderPlaylist();
+            stopTicker();
+            break;
+        case 'remove':
+            if (selectedPlaylistIdx >= 0 && playlist.length > 0) {
+                playlist.splice(selectedPlaylistIdx, 1);
+                playlistMeta.splice(selectedPlaylistIdx, 1);
+                if (currentIndex >= selectedPlaylistIdx && currentIndex > 0) currentIndex--;
+                selectedPlaylistIdx = Math.min(selectedPlaylistIdx, playlist.length - 1);
+                renderPlaylist();
+            }
+            break;
+        case 'select-all':
+            break;
+        case 'misc':
+            if (isV2Docking) {
+                ipcRenderer.send('kraken:window:toggle-effects');
+            } else if (effectsMenu) {
+                effectsMenu.classList.add('active');
+                if (btnEffects) btnEffects.classList.add('active');
+            }
+            break;
+        case 'drop-files':
+            await processDroppedPaths(payload.paths);
+            break;
+        default:
+            break;
+    }
+}
+
 function renderPlaylist() {
+    if (isV2Docking) {
+        broadcastPlaylistState();
+        return;
+    }
     if (!playlistTracks) return;
 
     if (playlist.length === 0) {
