@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Kraken Effects Overlay</title>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: transparent;
+        }
+        canvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        #bubblesCanvas { z-index: 0; }
+        #particlesCanvas { z-index: 1; }
+    </style>
+</head>
+<body>
+    <canvas id="bubblesCanvas"></canvas>
+    <canvas id="particlesCanvas"></canvas>
+    <script src="effects-overlay-renderer.js"></script>
+</body>
+</html>

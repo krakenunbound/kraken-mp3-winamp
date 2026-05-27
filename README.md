@@ -1,47 +1,58 @@
-# Kraken MP3 (Winamp Edition)
+# Kraken MP3 Winamp v2
 
-A Winamp-style desktop music player with ocean/Kraken theming — 10-band EQ, audio visualizers, particle effects, and floating album art behind the playlist.
+Multi-window Winamp-style desktop player — magnetic docking, standalone visualizer, 10-band EQ, particle effects, and Kraken/ocean themes.
+
+> **Classic v1** (single-window Kraken MP3) lives in a **separate repo**: [kraken-mp3](https://github.com/krakenunbound/kraken-mp3). See [docs/V1_VS_V2.md](docs/V1_VS_V2.md).
+
+## Download (v2)
+
+| Asset | Link |
+|-------|------|
+| **Windows installer (recommended)** | [Kraken MP3 Winamp v2 — Latest release](https://github.com/krakenunbound/kraken-mp3-winamp/releases/latest) |
+| **Portable .exe** | Same [Releases](https://github.com/krakenunbound/kraken-mp3-winamp/releases/latest) page |
+| **Local build copy** | `Install File/` after `npm run build:v2:win` |
+
+## Documentation
+
+| Guide | Link |
+|-------|------|
+| **v2 user guide** (install, docking, shortcuts) | [docs/V2_USER_GUIDE.md](docs/V2_USER_GUIDE.md) |
+| **v1 vs v2** (repos, installers, which to use) | [docs/V1_VS_V2.md](docs/V1_VS_V2.md) |
+| **v2 changelog** | [CHANGELOG_V2.md](CHANGELOG_V2.md) |
+| Legacy single-window guide (v1-style in this repo) | [USER_GUIDE.md](USER_GUIDE.md) |
+| Contributor / structure notes | [ABOUT.md](ABOUT.md) |
+| Roadmap | [docs/V2_ROADMAP.md](docs/V2_ROADMAP.md) |
 
 ## Demo
 
 [![Watch Kraken MP3 in action on YouTube](https://img.youtube.com/vi/t21i5fS1UZY/hqdefault.jpg)](https://youtube.com/shorts/t21i5fS1UZY)
 
-**[▶ Watch on YouTube Shorts](https://youtube.com/shorts/t21i5fS1UZY)** — floating album art, visualizers, and the Winamp-style UI in motion.
+**[▶ Watch on YouTube Shorts](https://youtube.com/shorts/t21i5fS1UZY)** — UI overview (v1-era capture; v2 adds separate viz/EQ/playlist windows).
 
-## Screenshots
+## v2 highlights
 
-![Kraken MP3 Winamp UI](screenshots/winamp-player.png)
+- **Docked stack:** Main → EQ → Playlist → Visualizer (detach / snap / regroup)
+- **Visualizers:** Bars, Mirror, LED, Spectrum, Wave, Circle, Waterfall
+- **Effects overlay:** Particles across the whole stack
+- **Floating album art** in the visualizer window
+- **Themes** synced to every panel
 
-![Effects, visualizers, and floating album art](screenshots/effects-menu.png)
+## Development
 
-## Download
+```bash
+git clone https://github.com/krakenunbound/kraken-mp3-winamp.git
+cd kraken-mp3-winamp
+npm install
 
-**[Kraken MP3 Setup 1.0.1](https://github.com/krakenunbound/kraken-mp3-winamp/releases/latest)** — Windows installer (NSIS)
+# v2 multi-window (daily dev)
+npm run start:v2
 
-Also available: portable **`Kraken MP3 1.0.1.exe`** on the [Releases](https://github.com/krakenunbound/kraken-mp3-winamp/releases) page.
+# Legacy single-window (v1-style, same codebase)
+npm start
 
-After building locally, the latest installers are also copied to the **`Install File`** folder in this repo.
-
-## User guide
-
-**[USER_GUIDE.md](USER_GUIDE.md)** — installation, supported formats, playlist/EQ/effects, shortcuts, folders, and troubleshooting.
-
-## Supported formats
-
-| Extension | In-app playback | Optional installer file association |
-|-----------|-----------------|-------------------------------------|
-| `.mp3` `.flac` `.wav` `.ogg` `.m4a` `.aac` | Yes | Yes |
-| `.wma` `.opus` | Yes | No (open via File → Open or Open with) |
-
-## Features
-
-- **Winamp-style UI** — Main, EQ, and Playlist panels (EQ / PL toggles)
-- **10-band graphic EQ** — Presets including Flat, Rock, Pop, Jazz, and more
-- **Visualizers** — Bars, wave, circle + mini LCD visualizer
-- **Particle effects** — Bubbles, rain, stars, embers, dust, snow, fireflies
-- **Floating album art** — Semi-transparent cover in the playlist (Float / Bounce modes)
-- **Color themes** — Kraken, grayscale, purple, crimson, and more
-- **File associations** — Optional during install (see table above)
+# Ship v2 installer + portable
+npm run build:v2:win
+```
 
 ## Keyboard shortcuts
 
@@ -49,7 +60,7 @@ After building locally, the latest installers are also copied to the **`Install 
 |-----|--------|
 | `Space` | Play / Pause |
 | `←` / `→` | Seek ±5s |
-| `Ctrl+←` / `Ctrl+→` | Previous / Next track |
+| `Ctrl+←` / `Ctrl+→` | Previous / Next |
 | `↑` / `↓` | Volume |
 | `M` | Mute |
 | `S` | Shuffle |
@@ -58,32 +69,12 @@ After building locally, the latest installers are also copied to the **`Install 
 | `~` | Effects menu |
 | `F12` | DevTools |
 
-Full list: [USER_GUIDE.md](USER_GUIDE.md#keyboard-shortcuts).
-
-## Development
-
-```bash
-git clone https://github.com/krakenunbound/kraken-mp3-winamp.git
-cd kraken-mp3-winamp
-npm install
-npm start
-npm run build:win
-```
-
-Project notes for contributors: [ABOUT.md](ABOUT.md).
+Full list: [docs/V2_USER_GUIDE.md](docs/V2_USER_GUIDE.md#keyboard-shortcuts).
 
 ## Tech
 
-- Electron 28
-- music-metadata
-- HTML5 Audio + Web Audio API
-
-## Credits
-
-**Kraken MP3 (Winamp Edition)** — design, code, art direction, and release by **[The Kraken](https://github.com/krakenunbound)** (Kraken Unbound).
-
-A sample track, **“Ad Astra”** by The Kraken, lives in [`assets/sample/`](assets/sample/) for anyone cloning the repo who wants something to test the player with. It is not bundled into the installer and is not loaded by the app.
+- Electron 28 · music-metadata · Web Audio API · vanilla JS/HTML/CSS
 
 ## License
 
-MIT — see [LICENSE](LICENSE). Copyright © 2026 The Kraken (Kraken Unbound).
+MIT — see [LICENSE](LICENSE).

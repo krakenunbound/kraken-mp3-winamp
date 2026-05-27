@@ -6,7 +6,9 @@
 
 ## Overview
 
-Winamp-style desktop MP3 player built with Electron: ocean/Kraken theme, 10-band EQ, playlist and equalizer panels, particle effects, audio visualizers, and optional floating album art over the playlist.
+**v2 (this branch / 2.0.0):** Multi-window Winamp-style player with magnetic docking (Main → EQ → Playlist → Visualizer), app-wide particle overlay, and standalone visualizer window.
+
+**v1 (legacy in same repo via `npm start` / `build:v1:win`):** Single stacked window. **Classic Kraken MP3** ships from [kraken-mp3](https://github.com/krakenunbound/kraken-mp3) — see [docs/V1_VS_V2.md](docs/V1_VS_V2.md).
 
 ## Tech Stack
 
@@ -21,10 +23,14 @@ Winamp-style desktop MP3 player built with Electron: ocean/Kraken theme, 10-band
 ```
 F:\Kraken_MP3_Winamp\
 ├── src/
-│   ├── main.js          # Electron main process
-│   ├── renderer.js      # UI, audio, effects, EQ, playlist
-│   ├── index.html       # Winamp-style UI template
-│   └── styles.css       # Ocean-themed styling
+│   ├── main.js          # Electron main process (v1/v2 flavor)
+│   ├── main/            # Dock engine, layout, effects overlay
+│   ├── panels/          # EQ, playlist, visualizer, effects HTML/JS
+│   ├── shared/          # Themes, canvasViz, themeClient
+│   ├── renderer.js      # Main window audio + IPC
+│   ├── index-v2.html    # v2 main shell
+│   ├── index.html       # Legacy single-window UI
+│   └── build-flavor.json # Packaged v1 vs v2 marker
 ├── assets/
 │   ├── icons/           # App icon (.ico, .png, .svg)
 │   └── sample/          # Sample audio file for local testing (not bundled / not auto-loaded)
@@ -34,7 +40,11 @@ F:\Kraken_MP3_Winamp\
 ├── screenshots/         # README images
 ├── package.json         # Version, electron-builder config
 ├── README.md
-├── USER_GUIDE.md        # End-user documentation
+├── docs/
+│   ├── V2_USER_GUIDE.md # v2 end-user documentation
+│   └── V1_VS_V2.md      # Product isolation vs classic Kraken MP3
+├── USER_GUIDE.md        # Legacy single-window guide
+├── CHANGELOG_V2.md
 ├── LICENSE
 └── ABOUT.md             # This file
 ```
@@ -150,5 +160,6 @@ Registered for: `.mp3`, `.flac`, `.wav`, `.ogg`, `.m4a`, `.aac`
 
 ## Version History
 
+- **v2.0** (planned) — Dockable Winamp-style panels; album art in visualizer; app-wide particles — [docs/V2_ROADMAP.md](docs/V2_ROADMAP.md)
 - **v1.0.1** — Fix metadata race condition where the previously-loaded track's tags/cover/duration could clobber the current track's display (most visible on `.wav` files). Remove auto-loaded sample track from the player; the sample file remains in `assets/sample/` as a repo-only test asset.
 - **v1.0.0** — Winamp UI, floating album art, public release

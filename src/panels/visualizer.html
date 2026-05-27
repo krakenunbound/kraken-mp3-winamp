@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kraken Visualizer</title>
+    <link rel="stylesheet" href="../styles.css">
+    <style>
+        html, body {
+            height: 100%;
+            overflow: hidden;
+            background: var(--panel-bg-dark);
+        }
+        body.viz-standalone .viz-titlebar {
+            -webkit-app-region: drag;
+        }
+        body.viz-standalone .panel-titlebar-btns,
+        body.viz-standalone button {
+            -webkit-app-region: no-drag;
+        }
+        .viz-standalone-root {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        .viz-standalone-root .winamp-panel {
+            flex: 1;
+            border: none;
+            min-height: 0;
+            position: relative;
+            overflow: hidden;
+        }
+        .viz-body {
+            position: absolute;
+            inset: 0;
+            top: 22px;
+        }
+        .viz-body .visualizer-canvas {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+            z-index: 0;
+        }
+        .viz-body .floating-album-stage {
+            z-index: 2;
+        }
+    </style>
+</head>
+<body class="viz-standalone theme-square">
+    <div class="viz-standalone-root">
+        <div class="winamp-panel" id="vizPanel">
+            <div class="panel-titlebar viz-titlebar" id="vizTitleBar">
+                <div class="panel-title-text">KRAKEN VISUALIZER</div>
+                <div class="panel-titlebar-btns">
+                    <button type="button" class="title-panel-btn dock-lock-btn is-locked" data-panel="visualizer" title="Locked below playlist — click to detach" aria-label="Dock lock">
+                        <svg class="dock-lock-icon" viewBox="0 0 16 16" width="10" height="10" aria-hidden="true">
+                            <g class="lock-closed"><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2" fill="none"/><rect x="4" y="7" width="8" height="6" rx="0.5"/></g>
+                            <g class="lock-open"><path d="M5.5 7V4.5a2.5 2.5 0 0 1 5 0" fill="none"/><rect x="4" y="7" width="8" height="6" rx="0.5"/></g>
+                        </svg>
+                    </button>
+                    <button class="title-panel-btn close-btn" id="btnVizClose" title="Close">×</button>
+                </div>
+            </div>
+            <div class="viz-body" id="vizBody">
+                <canvas id="visualizerCanvas" class="visualizer-canvas"></canvas>
+                <div class="floating-album-stage" id="floatingAlbumStage" aria-hidden="true">
+                    <div class="floating-album" id="floatingAlbum">
+                        <div class="floating-album-inner" id="floatingAlbumInner">
+                            <img id="floatingAlbumImg" class="floating-album-img" alt="">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="visualizer-renderer.js"></script>
+</body>
+</html>

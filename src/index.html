@@ -5,6 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kraken MP3</title>
     <link rel="stylesheet" href="styles.css">
+    <script>
+        (function () {
+            var q = window.location.search || '';
+            if (q.indexOf('v2=1') !== -1) {
+                document.documentElement.classList.add('v2-docking');
+            }
+        })();
+    </script>
+    <style>
+        html.v2-docking #eqPanel { display: none !important; }
+    </style>
 </head>
 <body>
     <!-- Background layers -->
@@ -153,8 +164,12 @@
                                 <div class="effect-buttons">
                                     <button class="effect-btn viz-btn" data-viz="none">Off</button>
                                     <button class="effect-btn viz-btn" data-viz="bars">Bars</button>
+                                    <button class="effect-btn viz-btn" data-viz="mirror">Mirror</button>
+                                    <button class="effect-btn viz-btn" data-viz="led">LED</button>
+                                    <button class="effect-btn viz-btn" data-viz="spectrum">Spectrum</button>
                                     <button class="effect-btn viz-btn" data-viz="wave">Wave</button>
                                     <button class="effect-btn viz-btn" data-viz="circle">Circle</button>
+                                    <button class="effect-btn viz-btn" data-viz="waterfall">Waterfall</button>
                                 </div>
                             </div>
                             <div class="effects-section">

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kraken MP3</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="v2-main theme-square">
+    <div id="backgroundLayer" class="background-layer"></div>
+
+    <span id="trackTitle" style="display:none"></span>
+    <span id="trackArtist" style="display:none"></span>
+    <span id="trackAlbum" style="display:none"></span>
+    <span id="trackNumber" style="display:none"></span>
+    <div id="albumArt" style="display:none"></div>
+
+    <div class="winamp-layout">
+        <div class="winamp-panel main-panel" id="mainPanel">
+            <div class="panel-titlebar" id="titleBar">
+                <div class="panel-title-text">✦ KRAKEN MP3 ✦</div>
+                <div class="panel-titlebar-btns">
+                    <button type="button" class="title-panel-btn dock-lock-btn is-locked" data-panel="main" title="Regroup all panels into one Winamp stack" aria-label="Regroup panels">
+                        <svg class="dock-lock-icon" viewBox="0 0 16 16" width="10" height="10" aria-hidden="true">
+                            <g class="lock-closed"><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2" fill="none"/><rect x="4" y="7" width="8" height="6" rx="0.5"/></g>
+                            <g class="lock-open"><path d="M5.5 7V4.5a2.5 2.5 0 0 1 5 0" fill="none"/><rect x="4" y="7" width="8" height="6" rx="0.5"/></g>
+                        </svg>
+                    </button>
+                    <button class="title-panel-btn eq-pl-btn active" id="btnEqToggle" title="Toggle Equalizer window">EQ</button>
+                    <button class="title-panel-btn eq-pl-btn active" id="btnPlToggle" title="Toggle Playlist">PL</button>
+                    <button class="title-panel-btn eq-pl-btn active" id="btnVizToggle" title="Toggle Visualizer window">VIZ</button>
+                    <button class="title-panel-btn" id="btnAlwaysOnTop" title="Always on Top">▲</button>
+                    <button class="title-panel-btn" id="btnMinimize" title="Minimize">─</button>
+                    <button class="title-panel-btn close-btn" id="btnClose" title="Close">×</button>
+                </div>
+            </div>
+
+            <div class="main-display">
+                <div class="disp-left">
+                    <canvas id="miniVizCanvas" class="mini-viz" width="72" height="14"></canvas>
+                    <div id="currentTime" class="digital-clock">0:00</div>
+                    <div class="time-mode-btn" id="timeModeBtn" title="Toggle remaining time">+</div>
+                </div>
+                <div class="disp-center">
+                    <div class="ticker-wrapper">
+                        <div class="scrolling-comment" id="trackComment"></div>
+                    </div>
+                    <div class="track-meta">
+                        <span class="meta-num" id="trackBitrate">---</span><span class="meta-unit">kbps</span>
+                        <span class="meta-num" id="trackSampleRate">--</span><span class="meta-unit">kHz</span>
+                        <span class="ch-ind" id="monoInd">mono</span>
+                        <span class="ch-ind lit" id="stereoInd">stereo</span>
+                    </div>
+                </div>
+                <div class="disp-right">
+                    <div class="vb-row">
+                        <span class="vb-label">VOL</span>
+                        <input type="range" class="vb-slider" id="volumeSlider" min="0" max="100" value="80" title="Volume (Up/Down)">
+                        <span class="vb-value" id="volValue">80%</span>
+                    </div>
+                    <div class="vb-row">
+                        <span class="vb-label">BAL</span>
+                        <input type="range" class="vb-slider bal-slider" id="balanceSlider" min="-100" max="100" value="0" title="Balance">
+                        <span class="vb-value" id="balValue">C</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="progress-container" id="progressContainer">
+                <div class="progress-track">
+                    <div class="progress-fill" id="progressFill"></div>
+                    <div class="progress-handle" id="progressHandle"></div>
+                </div>
+            </div>
+
+            <div class="transport-row">
+                <div class="transport-btns">
+                    <button class="xport-btn" id="btnPrev" title="Previous (Ctrl+←)">|◄</button>
+                    <button class="xport-btn play-xport" id="btnPlay" title="Play/Pause (Space)">
+                        <svg viewBox="0 0 24 24" fill="currentColor" id="playIcon" width="14" height="14"><path d="M8 5v14l11-7z"/></svg>
+                        <svg viewBox="0 0 24 24" fill="currentColor" id="pauseIcon" width="14" height="14" style="display:none"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                    </button>
+                    <button class="xport-btn" id="btnStop" title="Stop">■</button>
+                    <button class="xport-btn" id="btnNext" title="Next (Ctrl+→)">►|</button>
+                    <button class="xport-btn eject-btn" id="btnOpen" title="Open Files (Ctrl+O)">⏏</button>
+                </div>
+                <div class="mode-btns">
+                    <button class="mode-btn" id="btnShuffle" title="Shuffle (S)">SHUFFLE</button>
+                    <button class="mode-btn repeat-mode-btn" id="btnRepeat" title="Repeat (R)">
+                        <svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor">
+                            <path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="util-btns">
+                    <button class="mode-btn" id="btnEffects" title="Effects &amp; Visualizers (~)">
+                        <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
+                            <path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-4.42-4.03-8-9-8zm-5.5 9c-.83 0-1.5-.67-1.5-1.5S5.67 9 6.5 9 8 9.67 8 10.5 7.33 12 6.5 12zm3-4C8.67 8 8 7.33 8 6.5S8.67 5 9.5 5s1.5.67 1.5 1.5S10.33 8 9.5 8zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 5 14.5 5s1.5.67 1.5 1.5S15.33 8 14.5 8zm3 4c-.83 0-1.5-.67-1.5-1.5S16.67 9 17.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
+                        </svg>
+                    </button>
+                    <button class="mode-btn mute-mode-btn" id="btnMute" title="Mute (M)">
+                        <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" id="volumeIcon">
+                            <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+                        </svg>
+                        <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" id="muteIcon" style="display:none">
+                            <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <audio id="audioPlayer"></audio>
+    <div class="drop-overlay" id="dropOverlay">
+        <div class="drop-message">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="48" height="48">
+                <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+            </svg>
+            <span>Drop audio files here</span>
+        </div>
+    </div>
+
+    <script src="renderer.js"></script>
+</body>
+</html>

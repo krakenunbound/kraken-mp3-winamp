@@ -41,6 +41,93 @@
     --pl-selected:    rgba(59,158,190,0.12);
 
     --danger: #e03333;
+
+    /* Granular UI roles (overridden per theme) */
+    --btn-text: var(--text-mid);
+    --btn-text-hover: var(--accent-bright);
+    --btn-text-active: var(--lcd-text);
+    --btn-border: var(--accent-glow);
+    --slider-track: var(--lcd-bg);
+    --slider-thumb: var(--accent);
+    --slider-fill: var(--accent);
+    --eq-lever: var(--accent);
+    --eq-lever-border: var(--accent);
+    --viz-bar: var(--accent);
+    --viz-bar-bright: var(--accent-bright);
+    --viz-bar-glow: var(--accent-glow);
+    --progress-fill-start: var(--accent);
+    --progress-fill-end: var(--accent-bright);
+    --mini-viz-bar: var(--accent);
+
+    --radius-sm: 2px;
+    --radius-md: 4px;
+    --radius-round: 50%;
+}
+
+body.theme-square {
+    --radius-sm: 0;
+    --radius-md: 0;
+    --radius-round: 0;
+}
+
+body.theme-rounded {
+    --radius-sm: 2px;
+    --radius-md: 4px;
+    --radius-round: 50%;
+}
+
+/* v2 panel chrome — Winamp-style square boxes vs optional rounded (floating only) */
+html.theme-square,
+html.theme-square body,
+html.dock-stack-flush,
+html.dock-stack-flush body {
+    border-radius: 0 !important;
+}
+
+body.theme-square .winamp-panel,
+html.theme-square .winamp-panel,
+body.dock-stack-flush .winamp-panel,
+html.dock-stack-flush .winamp-panel {
+    border-radius: 0 !important;
+    overflow: visible;
+}
+
+body.theme-rounded .winamp-panel,
+html.theme-rounded .winamp-panel {
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+body.dock-stack-flush .winamp-panel,
+html.dock-stack-flush .winamp-panel {
+    border-radius: 0 !important;
+    overflow: visible;
+}
+
+body.pl-standalone.theme-square .pl-standalone-root,
+body.eq-standalone.theme-square .eq-standalone-root,
+body.viz-standalone.theme-square .viz-standalone-root,
+body.fx-standalone.theme-square .fx-standalone-root,
+body.v2-main.theme-square .winamp-layout,
+body.pl-standalone.dock-stack-flush .pl-standalone-root,
+body.eq-standalone.dock-stack-flush .eq-standalone-root,
+body.viz-standalone.dock-stack-flush .viz-standalone-root,
+body.v2-main.dock-stack-flush .winamp-layout,
+html.dock-stack-flush .pl-standalone-root,
+html.dock-stack-flush .eq-standalone-root,
+html.dock-stack-flush .viz-standalone-root,
+html.dock-stack-flush .winamp-layout {
+    border-radius: 0 !important;
+    overflow: hidden;
+}
+
+body.pl-standalone.theme-rounded:not(.dock-stack-flush) .pl-standalone-root,
+body.eq-standalone.theme-rounded:not(.dock-stack-flush) .eq-standalone-root,
+body.viz-standalone.theme-rounded:not(.dock-stack-flush) .viz-standalone-root,
+body.fx-standalone.theme-rounded .fx-standalone-root,
+body.v2-main.theme-rounded:not(.dock-stack-flush) .winamp-layout {
+    border-radius: 8px;
+    overflow: hidden;
 }
 
 html, body {
@@ -72,6 +159,24 @@ html, body {
     display: flex; flex-direction: column;
     height: 100vh;
     overflow: hidden;
+}
+
+/* v2 main player — compact transport only (no particle canvas dead zone) */
+body.v2-main,
+body.v2-main html {
+    height: auto;
+    overflow: visible;
+}
+body.v2-main .background-layer {
+    display: none;
+}
+body.v2-main .winamp-layout {
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+}
+body.v2-main .main-panel {
+    flex-shrink: 0;
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -134,6 +239,31 @@ html, body {
 .title-panel-btn.close-btn:hover { background: var(--danger); color: #fff; border-color: #b02; }
 
 .eq-pl-btn { width: 24px; letter-spacing: 0.5px; }
+
+/* Dock lock — attach / detach adjacent panel (v2) */
+.dock-lock-btn {
+    width: 18px;
+    padding: 0;
+    -webkit-app-region: no-drag;
+}
+.dock-lock-btn .dock-lock-icon {
+    display: block;
+    fill: currentColor;
+    stroke: currentColor;
+    stroke-width: 1.2;
+}
+.dock-lock-btn.is-locked { color: var(--lcd-text); }
+.dock-lock-btn.is-unlocked { color: var(--accent-bright); }
+.dock-lock-btn.is-locked .lock-open { display: none; }
+.dock-lock-btn.is-unlocked .lock-closed { display: none; }
+.dock-lock-btn.dock-lock-pending {
+    opacity: 0.45;
+    cursor: help;
+}
+.dock-lock-btn.dock-lock-pending .lock-open,
+.dock-lock-btn.dock-lock-pending .lock-closed { display: none; }
+.dock-lock-btn.dock-lock-pending .lock-pending { display: block; }
+.dock-lock-btn .lock-pending { display: none; fill: var(--text-mid); }
 
 
 /* ══════════════════════════════════════════════════════════════
@@ -266,17 +396,17 @@ html, body {
 .vb-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
     width: 14px; height: 9px; margin-top: -3px;
-    background: linear-gradient(180deg, var(--bevel-light) 0%, var(--accent) 50%, var(--bevel-dark) 100%);
-    border: 1px solid var(--accent);
-    cursor: pointer; border-radius: 1px;
+    background: linear-gradient(180deg, var(--bevel-light) 0%, var(--slider-thumb) 50%, var(--bevel-dark) 100%);
+    border: 1px solid var(--slider-fill);
+    cursor: pointer; border-radius: var(--radius-sm);
     box-shadow: 0 0 4px var(--accent-glow);
 }
 /* Volume track fill (set via JS --vol-pct custom property) */
 #volumeSlider::-webkit-slider-runnable-track {
     background: linear-gradient(
         to right,
-        var(--accent) 0%,
-        var(--accent) var(--vol-pct, 80%),
+        var(--slider-fill) 0%,
+        var(--slider-fill) var(--vol-pct, 80%),
         var(--lcd-bg) var(--vol-pct, 80%)
     );
 }
@@ -299,7 +429,7 @@ html, body {
 }
 .progress-fill {
     height: 100%; width: 0%;
-    background: linear-gradient(90deg, var(--accent), var(--accent-bright));
+    background: linear-gradient(90deg, var(--progress-fill-start), var(--progress-fill-end));
     box-shadow: 0 0 6px var(--accent-glow);
     transition: width 0.1s linear;
 }
@@ -307,9 +437,9 @@ html, body {
     position: absolute; top: 50%; left: 0%;
     transform: translate(-50%, -50%);
     width: 11px; height: 11px;
-    background: var(--accent-bright);
-    border: 1px solid var(--accent);
-    border-radius: 50%; cursor: pointer;
+    background: var(--slider-thumb);
+    border: 1px solid var(--eq-lever-border);
+    border-radius: var(--radius-round); cursor: pointer;
     opacity: 0; transition: opacity 0.2s;
     box-shadow: 0 0 8px var(--accent-glow);
 }
@@ -330,13 +460,13 @@ html, body {
     border-left:   1px solid var(--bevel-light);
     border-bottom: 1px solid var(--bevel-dark);
     border-right:  1px solid var(--bevel-dark);
-    background: var(--btn-bg); color: var(--text-mid);
+    background: var(--btn-bg); color: var(--btn-text);
     cursor: pointer; font-size: 11px; font-weight: 700;
     display: flex; align-items: center; justify-content: center;
     gap: 1px; transition: all 0.1s;
 }
 .xport-btn:hover {
-    background: var(--btn-hover); color: var(--accent-bright);
+    background: var(--btn-hover); color: var(--btn-text-hover);
     box-shadow: 0 0 6px var(--accent-glow);
 }
 .xport-btn:active {
@@ -357,14 +487,14 @@ html, body {
     border-left:   1px solid var(--bevel-light);
     border-bottom: 1px solid var(--bevel-dark);
     border-right:  1px solid var(--bevel-dark);
-    background: var(--btn-bg); color: var(--text-lo);
+    background: var(--btn-bg); color: var(--btn-text);
     cursor: pointer; font-size: 8px; font-weight: 700; letter-spacing: 0.5px;
     display: flex; align-items: center; justify-content: center;
     transition: all 0.1s;
 }
-.mode-btn:hover { background: var(--btn-hover); color: var(--accent-bright); border-color: var(--accent); }
+.mode-btn:hover { background: var(--btn-hover); color: var(--btn-text-hover); border-color: var(--btn-border); }
 .mode-btn.active {
-    color: var(--accent-bright); background: var(--btn-active-bg);
+    color: var(--btn-text-active); background: var(--btn-active-bg);
     border-color: var(--accent);
     text-shadow: 0 0 6px var(--accent-glow);
 }
@@ -379,7 +509,7 @@ html, body {
     width: 300px;
     background: rgba(14, 22, 34, 0.97);
     border: 1px solid var(--accent);
-    border-radius: 0 0 4px 4px;
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
     padding: 8px;
     z-index: 1000;
     box-shadow: 0 6px 20px var(--accent-glow);
@@ -404,14 +534,14 @@ html, body {
     flex: 1 1 calc(25% - 3px); min-width: 50px;
     padding: 4px 3px;
     border: 1px solid var(--accent-glow);
-    background: rgba(10,18,28,0.8); color: var(--text-mid);
-    font-size: 9px; cursor: pointer; border-radius: 2px;
+    background: rgba(10,18,28,0.8); color: var(--btn-text);
+    font-size: 9px; cursor: pointer; border-radius: var(--radius-sm);
     text-align: center; transition: all 0.15s;
 }
-.effect-btn:hover { background: var(--btn-hover); border-color: var(--accent); color: var(--accent-bright); }
+.effect-btn:hover { background: var(--btn-hover); border-color: var(--btn-border); color: var(--btn-text-hover); }
 .effect-btn.active {
-    background: var(--btn-active-bg); border-color: var(--accent);
-    color: var(--lcd-text); box-shadow: 0 0 6px var(--accent-glow);
+    background: var(--btn-active-bg); border-color: var(--btn-border);
+    color: var(--btn-text-active); box-shadow: 0 0 6px var(--accent-glow);
 }
 .effect-slider-group {
     display: flex; align-items: center; gap: 6px; margin-bottom: 4px;
@@ -422,11 +552,11 @@ html, body {
 }
 .effect-slider-group input[type="range"] {
     flex: 1; height: 4px; -webkit-appearance: none;
-    background: var(--lcd-bg); border-radius: 2px; cursor: pointer;
+    background: var(--slider-track); border-radius: var(--radius-sm); cursor: pointer;
 }
 .effect-slider-group input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none; width: 10px; height: 10px;
-    background: var(--accent); border-radius: 50%; cursor: pointer;
+    background: var(--slider-thumb); border-radius: var(--radius-round); cursor: pointer;
 }
 .effect-slider-group span {
     font-size: 9px; color: var(--accent-bright); width: 24px; text-align: right;
@@ -451,7 +581,7 @@ html, body {
     height: 16px; padding: 0 7px;
     border-top:    1px solid var(--bevel-light); border-left:   1px solid var(--bevel-light);
     border-bottom: 1px solid var(--bevel-dark);  border-right:  1px solid var(--bevel-dark);
-    background: var(--btn-bg); color: var(--text-lo);
+    background: var(--btn-bg); color: var(--btn-text);
     cursor: pointer; font-size: 8px; font-weight: 700; letter-spacing: 0.5px;
     transition: all 0.1s;
 }
@@ -500,8 +630,8 @@ html, body {
 .eq-v-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
     width: 18px; height: 8px;
-    background: linear-gradient(90deg, var(--bevel-dark) 0%, var(--accent) 50%, var(--bevel-dark) 100%);
-    border: 1px solid var(--accent); cursor: pointer; border-radius: 1px;
+    background: linear-gradient(90deg, var(--bevel-dark) 0%, var(--eq-lever) 50%, var(--bevel-dark) 100%);
+    border: 1px solid var(--eq-lever-border); cursor: pointer; border-radius: var(--radius-sm);
     box-shadow: 0 0 4px var(--accent-glow);
 }
 .eq-v-slider:disabled { opacity: 0.4; cursor: default; }
@@ -562,7 +692,7 @@ html, body {
 .floating-album-inner {
     width: 100%;
     height: 100%;
-    border-radius: 4px;
+    border-radius: var(--radius-md);
     box-shadow: 0 8px 28px rgba(0, 0, 0, 0.55), 0 0 16px var(--accent-glow);
 }
 
@@ -570,7 +700,7 @@ html, body {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    border-radius: 4px;
+    border-radius: var(--radius-md);
     opacity: 0.5;
     border: 1px solid rgba(0, 200, 255, 0.35);
 }
@@ -653,7 +783,7 @@ html, body {
     height: 17px; padding: 0 5px;
     border-top:    1px solid var(--bevel-light); border-left:   1px solid var(--bevel-light);
     border-bottom: 1px solid var(--bevel-dark);  border-right:  1px solid var(--bevel-dark);
-    background: var(--btn-bg); color: var(--text-lo);
+    background: var(--btn-bg); color: var(--btn-text);
     cursor: pointer; font-size: 8px; font-weight: 700; letter-spacing: 0.5px;
     transition: all 0.1s;
 }

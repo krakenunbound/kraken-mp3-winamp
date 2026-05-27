@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kraken Effects</title>
+    <link rel="stylesheet" href="../styles.css">
+    <style>
+        html, body {
+            height: 100%;
+            overflow: hidden;
+            background: var(--panel-bg-dark);
+        }
+        body.fx-standalone .fx-titlebar { -webkit-app-region: drag; }
+        body.fx-standalone .panel-titlebar-btns,
+        body.fx-standalone .fx-body,
+        body.fx-standalone button,
+        body.fx-standalone input { -webkit-app-region: no-drag; }
+        .fx-standalone-root {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        .fx-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px;
+            min-height: 0;
+        }
+        .fx-body .effects-menu {
+            display: block;
+            position: static;
+            width: 100%;
+            max-height: none;
+            border: none;
+            box-shadow: none;
+            padding: 0;
+            background: transparent;
+        }
+        .theme-hint {
+            font-size: 8px;
+            color: var(--text-lo);
+            margin-bottom: 6px;
+            line-height: 1.35;
+        }
+        .custom-color-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            margin-bottom: 6px;
+        }
+        .custom-color-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .custom-color-label {
+            flex: 1;
+            font-size: 8px;
+            color: var(--text-mid);
+        }
+        .custom-color-picker {
+            width: 32px;
+            height: 22px;
+            padding: 0;
+            border: 1px solid var(--accent-glow);
+            background: transparent;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        .custom-color-hex {
+            width: 62px;
+            font-family: Consolas, 'Courier New', monospace;
+            font-size: 9px;
+            padding: 2px 4px;
+            border: 1px solid var(--bevel-dark);
+            background: var(--lcd-bg);
+            color: var(--lcd-text);
+            flex-shrink: 0;
+        }
+        .custom-color-hex:focus {
+            outline: 1px solid var(--accent);
+        }
+        .custom-color-apply {
+            flex-shrink: 0;
+            min-width: 40px;
+            height: 20px;
+            padding: 0 6px;
+            font-size: 8px;
+            font-weight: 700;
+            border: 1px solid var(--bevel-dark);
+            background: var(--btn-bg);
+            color: var(--text-mid);
+            cursor: pointer;
+        }
+        .custom-color-apply:disabled {
+            opacity: 0.45;
+            cursor: default;
+        }
+        .custom-color-apply:not(:disabled) {
+            color: var(--lcd-text);
+            border-color: var(--accent);
+            background: var(--btn-active-bg);
+        }
+        .custom-color-row.custom-color-dirty .custom-color-label {
+            color: var(--accent-bright);
+        }
+        .theme-reset-btn {
+            width: 100%;
+            flex: none !important;
+            min-width: 0 !important;
+        }
+        .viz-mode-buttons {
+            flex-wrap: wrap;
+        }
+        .viz-mode-buttons .viz-btn {
+            min-width: 58px;
+        }
+    </style>
+</head>
+<body class="fx-standalone theme-square">
+    <div class="fx-standalone-root">
+        <div class="panel-titlebar fx-titlebar">
+            <div class="panel-title-text">EFFECTS &amp; VISUALIZERS</div>
+            <div class="panel-titlebar-btns">
+                <button class="title-panel-btn close-btn" id="btnFxClose" title="Close">×</button>
+            </div>
+        </div>
+        <div class="fx-body">
+            <div class="effects-menu" id="effectsMenu">
+                <div class="effects-section">
+                    <div class="effects-section-title">Particle Effects</div>
+                    <div class="effect-buttons">
+                        <button class="effect-btn" data-effect="none">Off</button>
+                        <button class="effect-btn active" data-effect="bubbles">Bubbles</button>
+                        <button class="effect-btn" data-effect="rain">Rain</button>
+                        <button class="effect-btn" data-effect="stars">Stars</button>
+                        <button class="effect-btn" data-effect="embers">Embers</button>
+                        <button class="effect-btn" data-effect="dust">Dust</button>
+                        <button class="effect-btn" data-effect="snow">Snow</button>
+                        <button class="effect-btn" data-effect="fireflies">Fireflies</button>
+                    </div>
+                </div>
+                <div class="effects-section">
+                    <div class="effects-section-title">Particle Settings</div>
+                    <div class="effect-slider-group">
+                        <label>Quantity</label>
+                        <input type="range" id="effectQuantity" min="5" max="100" value="25">
+                        <span id="effectQuantityVal">25</span>
+                    </div>
+                    <div class="effect-slider-group">
+                        <label>Size</label>
+                        <input type="range" id="effectSize" min="1" max="20" value="8">
+                        <span id="effectSizeVal">8</span>
+                    </div>
+                    <div class="effect-slider-group">
+                        <label>Speed</label>
+                        <input type="range" id="effectSpeed" min="1" max="100" value="30">
+                        <span id="effectSpeedVal">30</span>
+                    </div>
+                </div>
+                <div class="effects-section">
+                    <div class="effects-section-title">Audio Visualizers</div>
+                    <div class="effect-buttons viz-mode-buttons">
+                        <button class="effect-btn viz-btn" data-viz="none">Off</button>
+                        <button class="effect-btn viz-btn" data-viz="bars">Bars</button>
+                        <button class="effect-btn viz-btn" data-viz="mirror">Mirror</button>
+                        <button class="effect-btn viz-btn" data-viz="led">LED</button>
+                        <button class="effect-btn viz-btn" data-viz="spectrum">Spectrum</button>
+                        <button class="effect-btn viz-btn" data-viz="wave">Wave</button>
+                        <button class="effect-btn viz-btn" data-viz="circle">Circle</button>
+                        <button class="effect-btn viz-btn" data-viz="waterfall">Waterfall</button>
+                    </div>
+                </div>
+                <div class="effects-section">
+                    <div class="effects-section-title">Floating Album Art</div>
+                    <div class="effect-buttons">
+                        <button class="effect-btn float-art-btn active" data-float-art="off">Off</button>
+                        <button class="effect-btn float-art-btn" data-float-art="float">Float</button>
+                        <button class="effect-btn float-art-btn" data-float-art="bounce">Bounce</button>
+                    </div>
+                </div>
+                <div class="effects-section">
+                    <div class="effects-section-title">Color Themes</div>
+                    <div class="effect-buttons">
+                        <button class="effect-btn theme-btn active" data-theme="kraken">Kraken</button>
+                        <button class="effect-btn theme-btn" data-theme="grayscale">Gray</button>
+                        <button class="effect-btn theme-btn" data-theme="purple">Purple</button>
+                        <button class="effect-btn theme-btn" data-theme="red">Crimson</button>
+                        <button class="effect-btn theme-btn" data-theme="blue">Sapphire</button>
+                        <button class="effect-btn theme-btn" data-theme="orange">Amber</button>
+                        <button class="effect-btn theme-btn" data-theme="green">Emerald</button>
+                        <button class="effect-btn theme-btn" data-theme="pink">Rose</button>
+                    </div>
+                </div>
+                <div class="effects-section" id="customThemeSection">
+                    <div class="effects-section-title">Customize Colors</div>
+                    <p class="theme-hint">Pick a swatch or type #rrggbb — preview updates here only. Click <strong>Apply</strong> (or Enter) when you want that color on all panels.</p>
+                    <div id="customColorGrid" class="custom-color-grid"></div>
+                    <button type="button" class="effect-btn theme-reset-btn" id="btnResetCustomColors">Reset custom colors</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="effects-renderer.js"></script>
+</body>
+</html>
