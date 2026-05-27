@@ -46,5 +46,8 @@ ipcRenderer.on('kraken:effects:sync', (_event, state) => {
 });
 
 ipcRenderer.on('kraken:effects:burst', () => {
+    // Don't queue bursts while the overlay is hidden / effect is 'none' —
+    // tick() isn't running to drain burstParticles[] and they'd accumulate.
+    if (!overlayActive) return;
     particles.triggerBurst();
 });

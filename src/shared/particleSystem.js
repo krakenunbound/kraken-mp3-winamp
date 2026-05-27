@@ -45,13 +45,31 @@ function createParticleSystem(bubblesCanvas, particlesCanvas) {
 
     function setState(state) {
         if (!state) return;
+        const prevEffect = currentEffect;
         if (state.effect !== undefined) currentEffect = state.effect;
         if (state.effectSettings) effectSettings = { ...state.effectSettings };
         if (state.theme && PARTICLE_THEMES[state.theme]) {
             activeThemeColors = PARTICLE_THEMES[state.theme];
         }
-        initEffectParticles();
-        if (currentEffect === 'none') clear();
+
+        if (currentEffect === 'none') {
+            clear();
+            return;
+        }
+
+        // Only respawn from scratch when the effect TYPE changes — existing
+        // particles have shape/fields specific to the current effect. For
+        // pure slider/theme tweaks, let the per-frame maintenance loop in
+        // drawEffectParticles grow into the new quantity, and trim any excess
+        // from the tail so we don't visibly teleport every particle on each
+        // slider input event.
+        if (prevEffect !== currentEffect) {
+            initEffectParticles();
+            return;
+        }
+        if (effectParticles.length > effectSettings.quantity) {
+            effectParticles.length = effectSettings.quantity;
+        }
     }
 
     function tick(dt, time) {

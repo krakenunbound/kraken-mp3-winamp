@@ -138,6 +138,12 @@ function raiseV2PlayerStack(frontWin, fullStack = true) {
             front.moveTop();
             if (!front.isFocused()) front.focus();
         }
+
+        // Keep the particle overlay above the freshly raised stack. When the
+        // stack isn't always-on-top, the overlay isn't either — so it needs an
+        // explicit lift after every stack raise, otherwise focusing a panel
+        // sandwiches the overlay behind it.
+        if (effectsOverlay) effectsOverlay.bringToFrontAfterStack();
     } finally {
         setImmediate(() => {
             v2StackFocusSync = false;
@@ -639,6 +645,12 @@ function createV2Windows() {
     for (const win of getStackWindows()) {
         effectsOverlay.attachWindowListeners(win);
     }
+    // Hide overlay during stack drag so it doesn't visibly trail the panels.
+    dockEngine.setDragListener((dragging) => {
+        if (!effectsOverlay) return;
+        if (dragging) effectsOverlay.handleDragStart();
+        else effectsOverlay.handleDragEnd();
+    });
 
     positionDocked();
 

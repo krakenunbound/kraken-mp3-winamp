@@ -222,6 +222,7 @@ function createDockEngine(mainWin, playlistWin, vizWin, eqWin, layout, onStateCh
 
     /** One lift per user drag — avoid setAlwaysOnTop/moveTop on every move tick (causes flicker). */
     let stackDrag = null;
+    let dragListener = null;
 
     const stackPanelIds = (panelId) => {
         const ids = getComponentPanels(links, panelId);
@@ -249,6 +250,9 @@ function createDockEngine(mainWin, playlistWin, vizWin, eqWin, layout, onStateCh
             const win = wins[id];
             if (win && !win.isDestroyed()) win.moveTop();
         }
+        if (dragListener) {
+            try { dragListener(true); } catch (err) { console.warn('dockEngine dragListener:', err); }
+        }
     };
 
     const endStackDrag = (panelId) => {
@@ -260,6 +264,9 @@ function createDockEngine(mainWin, playlistWin, vizWin, eqWin, layout, onStateCh
             }
         }
         stackDrag = null;
+        if (dragListener) {
+            try { dragListener(false); } catch (err) { console.warn('dockEngine dragListener:', err); }
+        }
     };
 
     const onPanelMove = (panelId) => {
@@ -378,6 +385,7 @@ function createDockEngine(mainWin, playlistWin, vizWin, eqWin, layout, onStateCh
         isPanelDocked: (panelId) => panelLocked(links, panelId),
         isFullyDocked: () => isFullyDocked(links),
         isStackDragging: () => !!stackDrag,
+        setDragListener: (fn) => { dragListener = typeof fn === 'function' ? fn : null; },
         persist,
         getLayoutSnapshot
     };
