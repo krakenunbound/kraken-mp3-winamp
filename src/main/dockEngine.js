@@ -377,6 +377,7 @@ function createDockEngine(mainWin, playlistWin, vizWin, eqWin, layout, onStateCh
         isMainPlaylistDocked: () => panelLocked(links, 'main'),
         isPanelDocked: (panelId) => panelLocked(links, panelId),
         isFullyDocked: () => isFullyDocked(links),
+        isStackDragging: () => !!stackDrag,
         persist,
         getLayoutSnapshot
     };

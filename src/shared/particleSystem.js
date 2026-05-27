@@ -36,6 +36,13 @@ function createParticleSystem(bubblesCanvas, particlesCanvas) {
         }
     }
 
+    function clear() {
+        effectParticles = [];
+        burstParticles = [];
+        if (bubblesCtx) bubblesCtx.clearRect(0, 0, canvasW, canvasH);
+        if (particlesCtx) particlesCtx.clearRect(0, 0, canvasW, canvasH);
+    }
+
     function setState(state) {
         if (!state) return;
         if (state.effect !== undefined) currentEffect = state.effect;
@@ -44,6 +51,7 @@ function createParticleSystem(bubblesCanvas, particlesCanvas) {
             activeThemeColors = PARTICLE_THEMES[state.theme];
         }
         initEffectParticles();
+        if (currentEffect === 'none') clear();
     }
 
     function tick(dt, time) {
@@ -550,7 +558,7 @@ function createParticleSystem(bubblesCanvas, particlesCanvas) {
     }
 
     // ============================================================================
-    return { init, resize, setState, tick, triggerBurst };
+    return { init, resize, setState, tick, triggerBurst, clear };
 }
 
 module.exports = { createParticleSystem, PARTICLE_THEMES };

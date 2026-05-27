@@ -493,11 +493,10 @@ function handleEffectsPanelApply(payload) {
                 resetWaterfall();
             }
             onVizModeChanged();
-            break;
-        }
             saveSettings();
             broadcastEffectsState();
             break;
+        }
         case 'set-float-art':
             applyFloatArtMode(payload.floatArtMode);
             document.querySelectorAll('.effect-btn[data-float-art]').forEach((b) => {
@@ -613,7 +612,7 @@ function applyDockLockState(state) {
         if (panel === 'main') {
             btn.title = locked
                 ? 'Stack grouped — click to regroup / snap all panels to main'
-                : 'Panels scattered — click to regroup into Winamp stack';
+                : 'Panels scattered — click to regroup into one stack';
         } else {
             btn.title = locked
                 ? 'Magnetically docked — click to detach (or drag away)'

@@ -68,9 +68,112 @@ function getV2PlayerWindows() {
 function applyV2StackAlwaysOnTop(on) {
     v2StackAlwaysOnTop = !!on;
     for (const win of getV2PlayerWindows()) {
-        if (on) win.setAlwaysOnTop(true, 'screen-saver');
+        if (on) win.setAlwaysOnTop(true, 'screen-saver', 0);
         else win.setAlwaysOnTop(false);
     }
+    if (effectsOverlay) {
+        effectsOverlay.setStackAlwaysOnTop();
+    }
+}
+
+/** Dock order for z-order when raising the stack (main on top of siblings). */
+function getV2StackRaiseOrder() {
+    return [mainWindow, eqWindow, playlistWindow, vizWindow].filter((w) => w && !w.isDestroyed());
+}
+
+const V2_APP_USER_MODEL_ID = 'com.krakenunbound.mp3player.v2';
+
+let v2StackFocusSync = false;
+let v2StackActivationReady = false;
+let v2StackSessionActive = false;
+let lastFocusedPlayerWindow = null;
+let stackRaiseTimer = null;
+
+function isV2PlayerWindow(win) {
+    if (!win || win.isDestroyed()) return false;
+    return getV2PlayerWindows().includes(win);
+}
+
+function applyV2TaskbarIdentity(win) {
+    if (!win || process.platform !== 'win32') return;
+    try {
+        win.setAppDetails({
+            appId: V2_APP_USER_MODEL_ID,
+            appIconPath: path.join(__dirname, '../assets/icons/icon.ico'),
+            appIconIndex: 0
+        });
+    } catch (err) {
+        console.warn('setAppDetails:', err);
+    }
+}
+
+/**
+ * Bring player stack forward. fullStack=true when returning from another app or taskbar restore;
+ * false when only switching panels (avoids moveTop storm / flicker).
+ */
+function raiseV2PlayerStack(frontWin, fullStack = true) {
+    if (!IS_V2_DOCKING || isQuittingV2 || v2StackFocusSync || !v2StackActivationReady) return;
+    if (dockEngine && dockEngine.isStackDragging && dockEngine.isStackDragging()) return;
+
+    const players = getV2PlayerWindows();
+    if (!players.length) return;
+
+    v2StackFocusSync = true;
+    try {
+        for (const w of players) {
+            if (w.isMinimized()) w.restore();
+        }
+
+        const front = frontWin && !frontWin.isDestroyed() ? frontWin : mainWindow;
+        if (fullStack) {
+            for (const w of getV2StackRaiseOrder()) {
+                if (w === front || !w.isVisible()) continue;
+                w.showInactive();
+                w.moveTop();
+            }
+        }
+
+        if (front && !front.isDestroyed()) {
+            if (!front.isVisible()) front.show();
+            front.moveTop();
+            if (!front.isFocused()) front.focus();
+        }
+    } finally {
+        setImmediate(() => {
+            v2StackFocusSync = false;
+        });
+    }
+}
+
+function wireV2StackActivationGroup() {
+    app.on('browser-window-focus', (_event, win) => {
+        if (!isV2PlayerWindow(win) || v2StackFocusSync || !v2StackActivationReady) return;
+
+        clearTimeout(stackRaiseTimer);
+        stackRaiseTimer = setTimeout(() => {
+            const anyMinimized = getV2PlayerWindows().some((w) => w.isMinimized());
+            const enteringFromOutside = !v2StackSessionActive;
+            const switchedPanel = lastFocusedPlayerWindow && lastFocusedPlayerWindow !== win;
+            const fullStack = enteringFromOutside || anyMinimized;
+
+            lastFocusedPlayerWindow = win;
+            v2StackSessionActive = true;
+
+            if (fullStack || switchedPanel) {
+                raiseV2PlayerStack(win, fullStack);
+            }
+        }, 40);
+    });
+
+    app.on('browser-window-blur', (_event, win) => {
+        if (!isV2PlayerWindow(win)) return;
+        setTimeout(() => {
+            const focused = BrowserWindow.getFocusedWindow();
+            if (!isV2PlayerWindow(focused)) {
+                v2StackSessionActive = false;
+            }
+        }, 150);
+    });
 }
 
 function runWhenMainReady(task) {
@@ -114,12 +217,7 @@ if (!gotTheLock) {
     app.on('second-instance', (event, commandLine) => {
         if (mainWindow) {
             if (mainWindow.isMinimized()) mainWindow.restore();
-            mainWindow.focus();
-            if (playlistWindow && !playlistWindow.isDestroyed() && playlistWindow.isVisible()) {
-                playlistWindow.focus();
-            } else if (eqWindow && !eqWindow.isDestroyed() && eqWindow.isVisible()) {
-                eqWindow.focus();
-            }
+            raiseV2PlayerStack(mainWindow);
             const filePath = commandLine.find(arg => isAudioFile(arg));
             if (filePath) {
                 mainWindow.webContents.send('file-opened', filePath);
@@ -472,10 +570,18 @@ function createV2Windows() {
         icon: path.join(__dirname, '../assets/icons/icon.png')
     });
 
+    if (process.platform === 'win32') {
+        app.setAppUserModelId(V2_APP_USER_MODEL_ID);
+    }
+
     mainWindow.loadFile(path.join(__dirname, 'index-v2.html'));
     playlistWindow.loadFile(path.join(__dirname, 'panels', 'playlist.html'));
     vizWindow.loadFile(path.join(__dirname, 'panels', 'visualizer.html'));
     eqWindow.loadFile(path.join(__dirname, 'panels', 'eq.html'));
+
+    for (const win of [mainWindow, playlistWindow, vizWindow, eqWindow]) {
+        applyV2TaskbarIdentity(win);
+    }
 
     attachDevToolsShortcut(mainWindow);
     attachDevToolsShortcut(playlistWindow);
@@ -518,7 +624,17 @@ function createV2Windows() {
         getStackWindows,
         getDockState: () => (dockEngine ? dockEngine.getDockState() : { docked: false }),
         appRoot: __dirname,
-        onReady: () => syncEffectsStateToPanel()
+        onReady: () => {
+            syncEffectsStateToPanel();
+            execOnMain(
+                'typeof window.getEffectsStateForIpc === "function" ? window.getEffectsStateForIpc() : null'
+            )
+                .then((state) => {
+                    if (state && effectsOverlay) effectsOverlay.sendState(state);
+                })
+                .catch(() => {});
+        },
+        isStackAlwaysOnTop: () => v2StackAlwaysOnTop
     });
     for (const win of getStackWindows()) {
         effectsOverlay.attachWindowListeners(win);
@@ -575,6 +691,12 @@ function createV2Windows() {
     wireV2AppClose(playlistWindow);
     wireV2AppClose(vizWindow);
     wireV2AppClose(eqWindow);
+
+    wireV2StackActivationGroup();
+    setTimeout(() => {
+        v2StackActivationReady = true;
+        lastFocusedPlayerWindow = mainWindow;
+    }, 900);
 
     wireStartupFileOpen(mainWindow);
 }
