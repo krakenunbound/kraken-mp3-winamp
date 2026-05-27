@@ -1,5 +1,5 @@
-appId: com.krakenunbound.mp3player.winamp.v2
-productName: Kraken MP3 Winamp v2
+appId: com.krakenunbound.mp3player.v2
+productName: Kraken MP3
 copyright: Copyright © Kraken Unbound
 directories:
   output: dist
@@ -13,40 +13,9 @@ win:
     - portable
   icon: assets/icons/icon.ico
   legalTrademarks: Kraken Unbound
-  executableName: Kraken MP3 Winamp v2
-  fileAssociations:
-    - ext: mp3
-      name: MP3 Audio File
-      description: MP3 Audio File
-      role: Viewer
-      icon: assets/icons/icon.ico
-    - ext: flac
-      name: FLAC Audio File
-      description: FLAC Audio File
-      role: Viewer
-      icon: assets/icons/icon.ico
-    - ext: wav
-      name: WAV Audio File
-      description: WAV Audio File
-      role: Viewer
-      icon: assets/icons/icon.ico
-    - ext: ogg
-      name: OGG Audio File
-      description: OGG Audio File
-      role: Viewer
-      icon: assets/icons/icon.ico
-    - ext: m4a
-      name: M4A Audio File
-      description: M4A Audio File
-      role: Viewer
-      icon: assets/icons/icon.ico
-    - ext: aac
-      name: AAC Audio File
-      description: AAC Audio File
-      role: Viewer
-      icon: assets/icons/icon.ico
+  executableName: Kraken MP3
 nsis:
-  include: build/uninstaller.nsh
+  include: build/installer-v2.nsh
   oneClick: false
   perMachine: true
   allowToChangeInstallationDirectory: true
@@ -56,6 +25,6 @@ nsis:
   runAfterFinish: true
   installerIcon: assets/icons/icon.ico
   uninstallerIcon: assets/icons/icon.ico
-  shortcutName: Kraken MP3 Winamp v2
+  shortcutName: Kraken MP3
 portable:
   artifactName: ${productName} ${version}.${ext}

@@ -16,7 +16,7 @@ const outPath = path.join(__dirname, '..', 'src', 'build-flavor.json');
 const payload = {
     mode,
     version: pkg.version,
-    productName: mode === 'v2' ? 'Kraken MP3 Winamp v2' : 'Kraken MP3',
+    productName: 'Kraken MP3',
     generatedAt: new Date().toISOString()
 };
 

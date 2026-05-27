@@ -30,6 +30,7 @@ ipcRenderer.on('kraken:overlay:resize', (_event, payload) => {
 
 ipcRenderer.on('kraken:overlay:hide', () => {
     overlayActive = false;
+    particles.clear();
 });
 
 ipcRenderer.on('kraken:effects:sync', (_event, state) => {
@@ -39,6 +40,9 @@ ipcRenderer.on('kraken:effects:sync', (_event, state) => {
         effectSettings: state.effectSettings,
         theme: state.theme
     });
+    const active = state.effect !== undefined && state.effect !== 'none';
+    overlayActive = active;
+    if (!active) particles.clear();
 });
 
 ipcRenderer.on('kraken:effects:burst', () => {

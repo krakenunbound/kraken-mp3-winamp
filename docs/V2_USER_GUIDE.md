@@ -6,7 +6,7 @@
 ## Install
 
 1. Download **`Kraken MP3 Winamp v2 Setup 2.0.0.exe`** from [GitHub Releases](https://github.com/krakenunbound/kraken-mp3-winamp/releases/latest).
-2. Run the installer. Optional: register file associations for MP3, FLAC, WAV, OGG, M4A, AAC.
+2. Run the installer. After you choose the install folder, you will see **“Default music player”** — check **Yes** if you want Kraken to become the default app for **MP3, FLAC, WAV, OGG, M4A, AAC, WMA, and Opus**. Leave it unchecked to install without changing Windows defaults.
 3. Launch **Kraken MP3 Winamp v2** from the Start menu or desktop shortcut.
 
 **Portable:** use **`Kraken MP3 Winamp v2 2.0.0.exe`** from the same release page (no installer).
@@ -79,7 +79,7 @@ Open from the main window. Controls include:
 
 ## Supported formats
 
-MP3, FLAC, WAV, OGG, M4A, AAC, WMA, OPUS — same as v1. Installer file associations cover the six common types; open WMA/Opus via **File → Open** or drag-in.
+MP3, FLAC, WAV, OGG, M4A, AAC, WMA, OPUS — same as v1. If you opted in during install, those types open in Kraken by default (including WMA and Opus). Otherwise use **File → Open** or drag-in.
 
 ## Folders
 

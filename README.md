@@ -1,6 +1,6 @@
-# Kraken MP3 Winamp v2
+# Kraken MP3 (v2)
 
-Multi-window Winamp-style desktop player — magnetic docking, standalone visualizer, 10-band EQ, particle effects, and Kraken/ocean themes.
+Multi-window desktop player — magnetic docking, standalone visualizer, 10-band EQ, particle effects, and Kraken/ocean themes.
 
 > **Classic v1** (single-window Kraken MP3) lives in a **separate repo**: [kraken-mp3](https://github.com/krakenunbound/kraken-mp3). See [docs/V1_VS_V2.md](docs/V1_VS_V2.md).
 
@@ -8,7 +8,7 @@ Multi-window Winamp-style desktop player — magnetic docking, standalone visual
 
 | Asset | Link |
 |-------|------|
-| **Windows installer (recommended)** | [Kraken MP3 Winamp v2 — Latest release](https://github.com/krakenunbound/kraken-mp3-winamp/releases/latest) |
+| **Windows installer (recommended)** | [Kraken MP3 — Latest release](https://github.com/krakenunbound/kraken-mp3-winamp/releases/latest) |
 | **Portable .exe** | Same [Releases](https://github.com/krakenunbound/kraken-mp3-winamp/releases/latest) page |
 | **Local build copy** | `Install File/` after `npm run build:v2:win` |
 

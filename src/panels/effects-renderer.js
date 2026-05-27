@@ -219,7 +219,11 @@ document.querySelectorAll('.effect-btn[data-effect]').forEach((btn) => {
 
 document.querySelectorAll('.effect-btn[data-viz]').forEach((btn) => {
     btn.addEventListener('click', () => {
-        sendApply('set-viz', { visualizer: btn.dataset.viz });
+        const mode = btn.dataset.viz;
+        sendApply('set-viz', { visualizer: mode });
+        document.querySelectorAll('.effect-btn[data-viz]').forEach((b) => {
+            b.classList.toggle('active', b.dataset.viz === mode);
+        });
     });
 });
 
