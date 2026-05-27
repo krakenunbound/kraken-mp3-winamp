@@ -23,19 +23,22 @@ function createEffectsOverlayManager({ getStackWindows, getDockState, appRoot, o
         return !!(state && state.docked);
     }
 
-    /** Reject a bounding box that spans the desktop (detached / scattered panels). */
+    /**
+     * Reject a bounding box that spans the desktop horizontally (detached /
+     * scattered panels in different columns). We deliberately do NOT cap the
+     * vertical span — a legitimately docked 4-panel stack can be ~1200 px tall,
+     * which is taller than 85 % of a 1080p work area. Vertical scatter is
+     * already caught by isStackFullyDocked() via the dock graph.
+     */
     function isStackLayoutCompact(wins) {
         if (!wins.length) return false;
         const bounds = wins.map((w) => w.getBounds());
         const left = Math.min(...bounds.map((b) => b.x));
         const right = Math.max(...bounds.map((b) => b.x + b.width));
-        const top = Math.min(...bounds.map((b) => b.y));
-        const bottom = Math.max(...bounds.map((b) => b.y + b.height));
         const spanX = right - left;
-        const spanY = bottom - top;
         if (spanX > MAX_STACK_SPAN_X) return false;
-        const { workArea } = screen.getDisplayNearestPoint({ x: left, y: top });
-        if (spanX > workArea.width * 0.85 || spanY > workArea.height * 0.85) return false;
+        const { workArea } = screen.getDisplayNearestPoint({ x: left, y: bounds[0].y });
+        if (spanX > workArea.width * 0.85) return false;
         return true;
     }
 
