@@ -31,32 +31,51 @@ function sampleFrequency(freqData, x, width, useLog = false) {
     return freqData[i0] * (1 - frac) + freqData[i1] * frac;
 }
 
+/**
+ * Spectrum bars — uniform-width bars across the full canvas, log-mapped per
+ * column so the visible content reflects the entire frequency range (not
+ * just the bass that was over-drawn before).
+ */
 function drawBars(ctx, canvas, freqData, theme) {
     if (!freqData || !ctx) return;
-    const bufferLength = freqData.length;
-    const barWidth = (canvas.width / bufferLength) * 2.5;
-    let x = 0;
-    for (let i = 0; i < bufferLength; i++) {
-        const barHeight = (freqData[i] / 255) * canvas.height;
-        ctx.fillStyle = themeColor(theme, i, bufferLength);
-        ctx.fillRect(x, canvas.height - barHeight, barWidth - 1, barHeight);
-        x += barWidth;
+    const w = canvas.width;
+    const h = canvas.height;
+    if (w < 1) return;
+    const BAR_TARGET_W = 6; // px; bars stay this wide at any window size
+    const cols = Math.max(1, Math.floor(w / BAR_TARGET_W));
+    const barW = w / cols;
+    for (let c = 0; c < cols; c++) {
+        const xCenter = (c + 0.5) * barW;
+        const v = sampleFrequency(freqData, xCenter, w, true) / 255;
+        const barHeight = v * h;
+        ctx.fillStyle = themeColor(theme, c, cols);
+        ctx.fillRect(c * barW, h - barHeight, Math.max(1, barW - 1), barHeight);
     }
 }
 
+/**
+ * Mirror — bars reflected vertically around the midline. Uniform bar width
+ * across the full canvas with log-frequency sampling per column, so wider
+ * windows just add more (not fatter) bars and every bar reflects audible
+ * content rather than wasted-on-silent-high-freq bins.
+ */
 function drawMirror(ctx, canvas, freqData, theme) {
     if (!freqData || !ctx) return;
-    const bufferLength = Math.min(freqData.length, Math.floor(canvas.width / 3));
-    const step = Math.max(1, Math.floor(freqData.length / bufferLength));
-    const barWidth = canvas.width / bufferLength;
+    const w = canvas.width;
+    if (w < 1) return;
+    const BAR_TARGET_W = 5; // a touch denser than Bars — mirror looks better
+    const cols = Math.max(1, Math.floor(w / BAR_TARGET_W));
+    const barW = w / cols;
     const midY = canvas.height / 2;
-    for (let b = 0; b < bufferLength; b++) {
-        const i = b * step;
-        const h = (freqData[i] / 255) * (midY - 4);
-        const x = b * barWidth;
-        ctx.fillStyle = themeColor(theme, i, freqData.length);
-        ctx.fillRect(x, midY - h, barWidth - 1, h);
-        ctx.fillRect(x, midY, barWidth - 1, h);
+    const halfMax = midY - 4;
+    for (let c = 0; c < cols; c++) {
+        const xCenter = (c + 0.5) * barW;
+        const v = sampleFrequency(freqData, xCenter, w, true) / 255;
+        const h = v * halfMax;
+        const x = c * barW;
+        ctx.fillStyle = themeColor(theme, c, cols);
+        ctx.fillRect(x, midY - h, Math.max(1, barW - 1), h);
+        ctx.fillRect(x, midY, Math.max(1, barW - 1), h);
     }
 }
 
@@ -97,18 +116,18 @@ function drawSpectrum(ctx, canvas, freqData, theme) {
     if (!freqData || !ctx) return;
     const w = canvas.width;
     const h = canvas.height;
-    const n = Math.min(freqData.length, w);
-    const step = Math.max(1, Math.floor(freqData.length / n));
+    if (w < 1) return;
     const [ar, ag, ab] = theme.accentRgb || [59, 158, 190];
+
+    // Log-frequency mapping per pixel — spectrum now fills the full canvas
+    // at any width. Linear sampling capped at n=min(256,w), so any canvas
+    // wider than 256 px left a dead zone on the right.
+    const yFor = (x) => h - (sampleFrequency(freqData, x, w, true) / 255) * h * 0.92;
 
     ctx.beginPath();
     ctx.moveTo(0, h);
-    for (let x = 0; x < n; x++) {
-        const v = freqData[x * step] / 255;
-        const y = h - v * h * 0.92;
-        ctx.lineTo(x, y);
-    }
-    ctx.lineTo(n, h);
+    for (let x = 0; x < w; x++) ctx.lineTo(x, yFor(x));
+    ctx.lineTo(w, h);
     ctx.closePath();
     const grad = ctx.createLinearGradient(0, 0, 0, h);
     grad.addColorStop(0, `rgba(${ar}, ${ag}, ${ab}, 0.55)`);
@@ -119,9 +138,8 @@ function drawSpectrum(ctx, canvas, freqData, theme) {
     ctx.lineWidth = 2;
     ctx.strokeStyle = `rgba(${ar}, ${ag}, ${ab}, 0.9)`;
     ctx.beginPath();
-    for (let x = 0; x < n; x++) {
-        const v = freqData[x * step] / 255;
-        const y = h - v * h * 0.92;
+    for (let x = 0; x < w; x++) {
+        const y = yFor(x);
         if (x === 0) ctx.moveTo(x, y);
         else ctx.lineTo(x, y);
     }
