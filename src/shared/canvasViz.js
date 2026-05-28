@@ -60,20 +60,22 @@ function drawMirror(ctx, canvas, freqData, theme) {
     }
 }
 
+/**
+ * LED meter — columns of stacked segments. Designed to look the same at any
+ * window width: cells stay ~LED_CELL_W wide and we just add more of them as
+ * the canvas grows. Log-frequency mapping (sampleFrequency with useLog=true)
+ * gives every column real signal, so wider canvases never leave the right
+ * side visually empty.
+ */
 function drawLed(ctx, canvas, freqData, theme) {
     if (!freqData || !ctx) return;
     const segments = 12;
-    const cols = Math.min(48, Math.floor(canvas.width / 8));
-    if (cols < 1) return;
+    const LED_CELL_W = 8; // target visual width per LED column (px)
+    const cols = Math.max(1, Math.floor(canvas.width / LED_CELL_W));
     const colW = canvas.width / cols;
     const segH = canvas.height / segments;
-    // Log-frequency mapping (same technique as Spectrum/Waterfall). Linear
-    // sampling left the right ~5–10 columns visually empty because all the
-    // musical energy lives in the bottom ~25 % of FFT bins — those columns
-    // always rendered lit=0 and faded into the dark background. Log mapping
-    // spreads bass into more low columns and gives high columns actual signal.
     for (let c = 0; c < cols; c++) {
-        // Sample the center of each column for stable bars instead of left edge.
+        // Sample the center of each column (stable bars vs. sampling the edge).
         const xCenter = (c + 0.5) * colW;
         const v = sampleFrequency(freqData, xCenter, canvas.width, true) / 255;
         const lit = Math.floor(v * segments);
@@ -82,8 +84,9 @@ function drawLed(ctx, canvas, freqData, theme) {
             const on = s < lit;
             ctx.fillStyle = on
                 ? themeColor(theme, c, cols, 0.85)
-                // Brighter off-state so every column reads as part of the grid
-                // even when its amplitude is zero.
+                // Off-state is visible so the grid reads as a grid even when
+                // a column is momentarily silent — no more "is this section
+                // dead?" ambiguity at the right edge.
                 : `hsla(${theme.hueBase}, ${theme.saturation ?? 40}%, 28%, 0.4)`;
             ctx.fillRect(c * colW + 1, y + 1, colW - 2, segH - 2);
         }
