@@ -64,18 +64,27 @@ function drawLed(ctx, canvas, freqData, theme) {
     if (!freqData || !ctx) return;
     const segments = 12;
     const cols = Math.min(48, Math.floor(canvas.width / 8));
-    const step = Math.max(1, Math.floor(freqData.length / cols));
+    if (cols < 1) return;
     const colW = canvas.width / cols;
     const segH = canvas.height / segments;
+    // Log-frequency mapping (same technique as Spectrum/Waterfall). Linear
+    // sampling left the right ~5–10 columns visually empty because all the
+    // musical energy lives in the bottom ~25 % of FFT bins — those columns
+    // always rendered lit=0 and faded into the dark background. Log mapping
+    // spreads bass into more low columns and gives high columns actual signal.
     for (let c = 0; c < cols; c++) {
-        const v = freqData[c * step] / 255;
+        // Sample the center of each column for stable bars instead of left edge.
+        const xCenter = (c + 0.5) * colW;
+        const v = sampleFrequency(freqData, xCenter, canvas.width, true) / 255;
         const lit = Math.floor(v * segments);
         for (let s = 0; s < segments; s++) {
             const y = canvas.height - (s + 1) * segH;
             const on = s < lit;
             ctx.fillStyle = on
                 ? themeColor(theme, c, cols, 0.85)
-                : `hsla(${theme.hueBase}, ${theme.saturation ?? 40}%, 20%, 0.25)`;
+                // Brighter off-state so every column reads as part of the grid
+                // even when its amplitude is zero.
+                : `hsla(${theme.hueBase}, ${theme.saturation ?? 40}%, 28%, 0.4)`;
             ctx.fillRect(c * colW + 1, y + 1, colW - 2, segH - 2);
         }
     }
