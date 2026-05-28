@@ -108,7 +108,12 @@ function createEffectsOverlayManager({ getStackWindows, getDockState, appRoot, o
 
     function bringToFrontAfterStack() {
         if (!overlayWindow || overlayWindow.isDestroyed()) return;
-        if (!overlayWindow.isVisible()) return;
+        if (!overlayWindow.isVisible()) {
+            // Overlay was hidden by a transient — recover now that the stack
+            // is being raised back to the foreground.
+            scheduleSync();
+            return;
+        }
         applyOverlayZOrder();
     }
 
@@ -220,6 +225,15 @@ function createEffectsOverlayManager({ getStackWindows, getDockState, appRoot, o
         }
         if (!getOverlayLayout()) {
             hideOverlayWindow();
+            return;
+        }
+        // If the overlay was hidden by an earlier transient (drag, minimize,
+        // a momentary layout-null while the user was fiddling) but the layout
+        // is valid again, defer to syncBounds so it gets shown/positioned/
+        // z-ordered before we send the state. Without this, state pushes after
+        // a hide silently arrive at a hidden window and the user sees nothing.
+        if (!overlayWindow.isVisible()) {
+            syncBounds();
             return;
         }
         flushPendingEffectState();
