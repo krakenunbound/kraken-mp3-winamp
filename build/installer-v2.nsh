@@ -14,6 +14,10 @@ Var KrakenDefaultDialog
   !insertmacro APP_ASSOCIATE "${EXT}" "KrakenMP3V2.${EXT}" "${LABEL} (Kraken MP3)" '"$INSTDIR\${PRODUCT_FILENAME}.exe,0"' "Open with Kraken MP3" '"$INSTDIR\${PRODUCT_FILENAME}.exe" "%1"'
 !macroend
 
+!macro KrakenV2Capability EXT
+  WriteRegStr SHELL_CONTEXT "Software\Kraken MP3\Capabilities\FileAssociations" ".${EXT}" "KrakenMP3V2.${EXT}"
+!macroend
+
 !macro customPageAfterChangeDir
   Page custom KrakenDefaultPageCreate KrakenDefaultPageLeave
 !macroend
@@ -25,14 +29,14 @@ Function KrakenDefaultPageCreate
     Abort
   ${EndIf}
 
-  ${NSD_CreateLabel} 0 0 100% 20u "Default music player (optional)"
+  ${NSD_CreateLabel} 0 0 100% 20u "Audio file handling"
   Pop $0
-  ${NSD_CreateLabel} 0 22u 100% 40u "Do you want Kraken MP3 to open your audio files by default? You can change this later in Windows Settings."
+  ${NSD_CreateLabel} 0 22u 100% 40u "Register Kraken MP3 for common audio files. Windows may still ask you to confirm the default app in Settings."
   Pop $0
 
-  ${NSD_CreateCheckbox} 0 68u 100% 14u "Yes — default for MP3, FLAC, WAV, OGG, M4A, AAC, WMA, and Opus"
+  ${NSD_CreateCheckbox} 0 68u 100% 14u "Register for MP3, FLAC, WAV, OGG, M4A, AAC, WMA, and Opus"
   Pop $KrakenDefaultCheckbox
-  ${NSD_Uncheck} $KrakenDefaultCheckbox
+  ${NSD_Check} $KrakenDefaultCheckbox
 
   nsDialogs::Show
 FunctionEnd
@@ -47,6 +51,11 @@ Function KrakenDefaultPageLeave
 FunctionEnd
 
 Function KrakenV2RegisterFileAssociations
+  WriteRegStr SHELL_CONTEXT "Software\RegisteredApplications" "Kraken MP3" "Software\Kraken MP3\Capabilities"
+  WriteRegStr SHELL_CONTEXT "Software\Kraken MP3\Capabilities" "ApplicationName" "Kraken MP3"
+  WriteRegStr SHELL_CONTEXT "Software\Kraken MP3\Capabilities" "ApplicationDescription" "Kraken MP3 audio player"
+  WriteRegStr SHELL_CONTEXT "Software\Classes\Applications\${PRODUCT_FILENAME}.exe\shell\open\command" "" '"$INSTDIR\${PRODUCT_FILENAME}.exe" "%1"'
+
   !insertmacro KrakenV2Associate "mp3" "MP3 Audio"
   !insertmacro KrakenV2Associate "flac" "FLAC Audio"
   !insertmacro KrakenV2Associate "wav" "WAV Audio"
@@ -55,6 +64,14 @@ Function KrakenV2RegisterFileAssociations
   !insertmacro KrakenV2Associate "aac" "AAC Audio"
   !insertmacro KrakenV2Associate "wma" "WMA Audio"
   !insertmacro KrakenV2Associate "opus" "Opus Audio"
+  !insertmacro KrakenV2Capability "mp3"
+  !insertmacro KrakenV2Capability "flac"
+  !insertmacro KrakenV2Capability "wav"
+  !insertmacro KrakenV2Capability "ogg"
+  !insertmacro KrakenV2Capability "m4a"
+  !insertmacro KrakenV2Capability "aac"
+  !insertmacro KrakenV2Capability "wma"
+  !insertmacro KrakenV2Capability "opus"
   !insertmacro UPDATEFILEASSOC
 FunctionEnd
 
@@ -101,6 +118,8 @@ FunctionEnd
   DeleteRegKey SHELL_CONTEXT "Software\Classes\KrakenMP3WinampV2.opus"
   DeleteRegKey SHELL_CONTEXT "Software\Classes\Applications\Kraken MP3.exe"
   DeleteRegKey SHELL_CONTEXT "Software\Classes\Applications\Kraken MP3 Winamp v2.exe"
+  DeleteRegValue SHELL_CONTEXT "Software\RegisteredApplications" "Kraken MP3"
+  DeleteRegKey SHELL_CONTEXT "Software\Kraken MP3"
   DeleteRegKey SHELL_CONTEXT "Software\Microsoft\Windows\CurrentVersion\App Paths\Kraken MP3.exe"
   DeleteRegKey SHELL_CONTEXT "Software\Microsoft\Windows\CurrentVersion\App Paths\Kraken MP3 Winamp v2.exe"
 

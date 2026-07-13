@@ -7,6 +7,7 @@
   ReadRegStr $R0 SHELL_CONTEXT "Software\Classes\.${EXT}" ""
   WriteRegStr SHELL_CONTEXT "Software\Classes\.${EXT}" "${FILECLASS}_backup" "$R0"
   WriteRegStr SHELL_CONTEXT "Software\Classes\.${EXT}" "" "${FILECLASS}"
+  WriteRegStr SHELL_CONTEXT "Software\Classes\.${EXT}\OpenWithProgids" "${FILECLASS}" ""
   WriteRegStr SHELL_CONTEXT "Software\Classes\${FILECLASS}" "" `${DESCRIPTION}`
   WriteRegStr SHELL_CONTEXT "Software\Classes\${FILECLASS}\DefaultIcon" "" `${ICON}`
   WriteRegStr SHELL_CONTEXT "Software\Classes\${FILECLASS}\shell" "" "open"
@@ -18,7 +19,7 @@
   ReadRegStr $R0 SHELL_CONTEXT "Software\Classes\.${EXT}" `${FILECLASS}_backup`
   WriteRegStr SHELL_CONTEXT "Software\Classes\.${EXT}" "" "$R0"
   DeleteRegKey SHELL_CONTEXT `Software\Classes\${FILECLASS}`
-  DeleteRegKey SHELL_CONTEXT `Software\Classes\.${EXT}\OpenWithProgids\${FILECLASS}`
+  DeleteRegValue SHELL_CONTEXT `Software\Classes\.${EXT}\OpenWithProgids` `${FILECLASS}`
 !macroend
 
 !define SHCNE_ASSOCCHANGED 0x08000000

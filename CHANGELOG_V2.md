@@ -1,34 +1,44 @@
 # Changelog — Kraken MP3 (v2)
 
-## Unreleased (2026-05-27 polish pass)
+## 2.0.1 — 2026-07-13
 
 ### Brand
 - Product renamed from **Kraken MP3 Winamp v2** → **Kraken MP3**
-  (installer filenames: `Kraken MP3 Setup 2.0.0.exe`, `Kraken MP3 2.0.0.exe`;
+  (installer filenames: `Kraken MP3 Setup 2.0.1.exe`, `Kraken MP3 2.0.1.exe`;
   app ID changes to `com.krakenunbound.mp3player.v2`).
 
 ### Windows stack behavior
 - Click any panel → whole stack raises together with consistent z-order.
-- All four player windows share one Windows taskbar icon and grouping
-  via shared `AppUserModelID`.
+- The main player is now the sole Windows taskbar entry; EQ, Playlist,
+  and Visualizer remain independent dockable windows without producing
+  four taskbar thumbnails.
+- Minimize from any panel minimizes the whole player. Restore brings back
+  exactly the panels that were visible before minimizing.
 - `Always on top` (main) raises the whole stack to screen-saver level;
   particle overlay sits one level above so effects paint over the stack
   but below other apps.
 - Suppress stack-raise during active dock drag (no flicker).
 
 ### Effects overlay
-- Compact-stack guard: overlay only renders when all four panels are
-  magnetically docked within a single column (≤640 px wide and ≤85% of
-  the work area). Scattered panels → no overlay.
+- Overlay bounds now follow the active player layout without the former
+  compact-stack height restriction.
 - Cache the latest effects state in the main process so it survives
   startup races (state push before the overlay window finishes loading).
 - Hiding the overlay now clears the particle arrays and canvas so stale
   particles never reappear when it re-shows.
 - `set-viz` button optimistically reflects the active mode.
+- Fixed overlay z-order, drag trails, slider reset behavior, and particle
+  burst cleanup.
+- Effects panel can use the full display height and includes a Custom
+  palette slot that synchronizes after Apply.
+
+### Visualizers
+- Bars, Mirror, Spectrum, and LED modes now fill the available canvas width.
+- LED column count scales with the visualizer window width.
 
 ### Installer
-- New custom NSIS page: **Default music player (optional)** —
-  opt-in registration for mp3, flac, wav, ogg, m4a, aac, wma, opus.
+- Custom NSIS audio handling page registers MP3, FLAC, WAV, OGG, M4A,
+  AAC, WMA, and Opus, with Windows Registered Applications metadata.
 - `KrakenMP3V2.<ext>` ProgIDs (HKCU/HKLM-aware via `SHELL_CONTEXT`).
 - Uninstaller cleans both new and legacy ProgIDs plus the old
   `Kraken MP3 Winamp v2` appdata folders.
@@ -36,6 +46,8 @@
 ### Fixes
 - `renderer.js set-viz`: `saveSettings` and `broadcastEffectsState` were
   unreachable because of a `break` in the wrong place. Moved.
+- Updated `music-metadata` and its parser dependencies to address malformed
+  audio-file parsing advisories; metadata parsing now runs in the main process.
 
 ## 2.0.0 — 2026-05-20
 

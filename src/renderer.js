@@ -12,13 +12,10 @@ function detectV2Docking() {
 const isV2Docking = detectV2Docking();
 if (isV2Docking) console.log('[Kraken] v2 docking mode — embedded EQ disabled');
 
-// Load music-metadata for ID3 tags
-let musicMetadata = null;
-try {
-    musicMetadata = require('music-metadata');
-    console.log('music-metadata loaded successfully');
-} catch (e) {
-    console.error('Failed to load music-metadata:', e.message);
+// Metadata parsing runs in the main process. This keeps the renderer compatible
+// with the ESM-only current music-metadata package and centralizes file parsing.
+function parseAudioMetadata(filePath, options) {
+    return ipcRenderer.invoke('parse-audio-metadata', filePath, options);
 }
 
 // ============================================================================
@@ -2325,13 +2322,12 @@ function replacePlaylist(files) {
 }
 
 async function loadAllPlaylistMeta() {
-    if (!musicMetadata) return;
     const snapshot = playlist.slice();
     for (let i = 0; i < snapshot.length; i++) {
         if (snapshot[i] !== playlist[i]) break; // playlist changed, abort
         if (i === currentIndex) continue; // already loaded by loadMetadata()
         try {
-            const meta = await musicMetadata.parseFile(snapshot[i], { duration: true });
+            const meta = await parseAudioMetadata(snapshot[i], { duration: true });
             if (snapshot[i] !== playlist[i]) break;
             playlistMeta[i] = playlistMeta[i] || {};
             playlistMeta[i].title = meta.common.title || null;
@@ -2399,76 +2395,72 @@ async function loadMetadata(filePath) {
     let displayTitle = filename;
     let displayArtist = '';
 
-    if (musicMetadata) {
-        try {
-            const metadata = await musicMetadata.parseFile(filePath);
+    try {
+        const metadata = await parseAudioMetadata(filePath);
 
-            // Race guard: if another loadMetadata() started while we were
-            // awaiting, abort silently — our results are for a track that's
-            // no longer current.
-            if (myToken !== metadataLoadToken) return;
+        // Race guard: if another loadMetadata() started while we were
+        // awaiting, abort silently — our results are for a track that's
+        // no longer current.
+        if (myToken !== metadataLoadToken) return;
 
-            const { common, format } = metadata;
+        const { common, format } = metadata;
 
-            if (common.title) {
-                trackTitle.textContent = common.title;
-                displayTitle = common.title;
-            }
-            if (common.artist) {
-                trackArtist.textContent = common.artist;
-                displayArtist = common.artist;
-            }
-            if (common.album) trackAlbum.textContent = common.album;
-            if (common.track?.no) {
-                trackNumber.textContent = `Track ${common.track.no}${common.track.of ? '/' + common.track.of : ''}`;
-            }
-
-            // Bitrate & sample rate
-            if (format.bitrate && trackBitrate) {
-                trackBitrate.textContent = Math.round(format.bitrate / 1000);
-            }
-            if (format.sampleRate && trackSampleRate) {
-                trackSampleRate.textContent = Math.round(format.sampleRate / 1000);
-            }
-
-            // Mono / stereo
-            const channels = format.numberOfChannels || 2;
-            if (monoInd) monoInd.classList.toggle('lit', channels === 1);
-            if (stereoInd) stereoInd.classList.toggle('lit', channels >= 2);
-
-            // Album art
-            if (common.picture && common.picture.length > 0) {
-                setAlbumArtFromPicture(common.picture[0]);
-            }
-
-            // Store title, artist, duration in playlistMeta — keyed against
-            // the snapshot taken at call time, not the live currentIndex,
-            // which may have moved on.
-            if (playlist[myIndex] === filePath) {
-                playlistMeta[myIndex] = playlistMeta[myIndex] || {};
-                if (common.title) playlistMeta[myIndex].title = common.title;
-                if (common.artist) playlistMeta[myIndex].artist = common.artist;
-                if (format.duration) playlistMeta[myIndex].duration = format.duration;
-                renderPlaylist();
-            }
-
-            // Build ticker text
-            let tickerText = displayArtist ? `${displayArtist} - ${displayTitle}` : displayTitle;
-            if (common.track?.no) tickerText = `${common.track.no}. ${tickerText}`;
-            if (common.comment?.[0]) {
-                const comment = common.comment[0];
-                const commentText = typeof comment === 'string' ? comment : (comment.text || String(comment));
-                tickerText += `  ·  ${commentText}`;
-            }
-            startTicker(tickerText);
-
-        } catch (err) {
-            if (myToken !== metadataLoadToken) return;
-            console.error('Error reading metadata:', err);
-            // Still start ticker with filename
-            startTicker(displayTitle);
+        if (common.title) {
+            trackTitle.textContent = common.title;
+            displayTitle = common.title;
         }
-    } else {
+        if (common.artist) {
+            trackArtist.textContent = common.artist;
+            displayArtist = common.artist;
+        }
+        if (common.album) trackAlbum.textContent = common.album;
+        if (common.track?.no) {
+            trackNumber.textContent = `Track ${common.track.no}${common.track.of ? '/' + common.track.of : ''}`;
+        }
+
+        // Bitrate & sample rate
+        if (format.bitrate && trackBitrate) {
+            trackBitrate.textContent = Math.round(format.bitrate / 1000);
+        }
+        if (format.sampleRate && trackSampleRate) {
+            trackSampleRate.textContent = Math.round(format.sampleRate / 1000);
+        }
+
+        // Mono / stereo
+        const channels = format.numberOfChannels || 2;
+        if (monoInd) monoInd.classList.toggle('lit', channels === 1);
+        if (stereoInd) stereoInd.classList.toggle('lit', channels >= 2);
+
+        // Album art
+        if (common.picture && common.picture.length > 0) {
+            setAlbumArtFromPicture(common.picture[0]);
+        }
+
+        // Store title, artist, duration in playlistMeta — keyed against
+        // the snapshot taken at call time, not the live currentIndex,
+        // which may have moved on.
+        if (playlist[myIndex] === filePath) {
+            playlistMeta[myIndex] = playlistMeta[myIndex] || {};
+            if (common.title) playlistMeta[myIndex].title = common.title;
+            if (common.artist) playlistMeta[myIndex].artist = common.artist;
+            if (format.duration) playlistMeta[myIndex].duration = format.duration;
+            renderPlaylist();
+        }
+
+        // Build ticker text
+        let tickerText = displayArtist ? `${displayArtist} - ${displayTitle}` : displayTitle;
+        if (common.track?.no) tickerText = `${common.track.no}. ${tickerText}`;
+        if (common.comment?.[0]) {
+            const comment = common.comment[0];
+            const commentText = typeof comment === 'string' ? comment : (comment.text || String(comment));
+            tickerText += `  ·  ${commentText}`;
+        }
+        startTicker(tickerText);
+
+    } catch (err) {
+        if (myToken !== metadataLoadToken) return;
+        console.error('Error reading metadata:', err);
+        // Still start ticker with filename
         startTicker(displayTitle);
     }
 }
