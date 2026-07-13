@@ -61,6 +61,14 @@ const effectsWcLoadHooked = new WeakSet();
 let pendingEffectsState = null;
 let pendingThemeSync = null;
 let pendingEffectsSync = null;
+let musicMetadataPromise = null;
+
+function getMusicMetadata() {
+    if (!musicMetadataPromise) {
+        musicMetadataPromise = import('music-metadata');
+    }
+    return musicMetadataPromise;
+}
 
 function getV2PlayerWindows() {
     return [mainWindow, playlistWindow, vizWindow, eqWindow].filter((w) => w && !w.isDestroyed());
@@ -89,6 +97,8 @@ let v2StackActivationReady = false;
 let v2StackSessionActive = false;
 let lastFocusedPlayerWindow = null;
 let stackRaiseTimer = null;
+let v2StackMinimized = false;
+const v2WindowsVisibleBeforeMinimize = new Set();
 
 function isV2PlayerWindow(win) {
     if (!win || win.isDestroyed()) return false;
@@ -106,6 +116,28 @@ function applyV2TaskbarIdentity(win) {
     } catch (err) {
         console.warn('setAppDetails:', err);
     }
+}
+
+function hideV2SecondaryWindowsForMinimize() {
+    if (v2StackMinimized) return;
+
+    v2StackMinimized = true;
+    v2WindowsVisibleBeforeMinimize.clear();
+    for (const win of [playlistWindow, vizWindow, eqWindow]) {
+        if (!win || win.isDestroyed() || !win.isVisible()) continue;
+        v2WindowsVisibleBeforeMinimize.add(win);
+        win.hide();
+    }
+}
+
+function restoreV2SecondaryWindowsAfterMinimize() {
+    if (!v2StackMinimized) return;
+
+    for (const win of v2WindowsVisibleBeforeMinimize) {
+        if (win && !win.isDestroyed()) win.showInactive();
+    }
+    v2WindowsVisibleBeforeMinimize.clear();
+    v2StackMinimized = false;
 }
 
 /**
@@ -531,6 +563,7 @@ function createV2Windows() {
         resizable: true,
         backgroundColor: '#0a1018',
         show: true,
+        skipTaskbar: true,
         webPreferences: {
             nodeIntegration: true,
             contextIsolation: false,
@@ -555,6 +588,7 @@ function createV2Windows() {
         resizable: true,
         backgroundColor: '#0a1018',
         show: true,
+        skipTaskbar: true,
         webPreferences: {
             nodeIntegration: true,
             contextIsolation: false,
@@ -579,6 +613,7 @@ function createV2Windows() {
         resizable: false,
         backgroundColor: '#0a1018',
         show: true,
+        skipTaskbar: true,
         webPreferences: {
             nodeIntegration: true,
             contextIsolation: false,
@@ -673,10 +708,13 @@ function createV2Windows() {
     });
 
     mainWindow.on('minimize', () => {
+        hideV2SecondaryWindowsForMinimize();
         if (effectsOverlay) effectsOverlay.hide();
     });
     mainWindow.on('restore', () => {
+        restoreV2SecondaryWindowsAfterMinimize();
         if (effectsOverlay) effectsOverlay.scheduleSync();
+        setImmediate(() => raiseV2PlayerStack(mainWindow));
     });
 
     mainWindow.webContents.once('did-finish-load', () => {
@@ -749,6 +787,14 @@ function getDialogParent() {
 
 function registerIpcHandlers() {
 ipcMain.handle('kraken:ping', () => ({ ok: true, mode: IS_V2_DOCKING ? 'v2' : 'legacy' }));
+
+ipcMain.handle('parse-audio-metadata', async (_event, filePath, options = {}) => {
+    if (!isAudioFile(filePath)) {
+        throw new Error('Unsupported audio file');
+    }
+    const musicMetadata = await getMusicMetadata();
+    return musicMetadata.parseFile(filePath, options);
+});
 
 ipcMain.handle('kraken:eq:get-state', async () => {
     if (!mainWindow) return null;
@@ -1077,7 +1123,12 @@ ipcMain.handle('list-backgrounds', async (event, bgPath) => {
 
 ipcMain.on('minimize-window', (event) => {
     const win = BrowserWindow.fromWebContents(event.sender);
-    if (win) win.minimize();
+    if (!win) return;
+    if (IS_V2_DOCKING && isV2PlayerWindow(win) && mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.minimize();
+        return;
+    }
+    win.minimize();
 });
 
 ipcMain.on('close-window', (event) => {
