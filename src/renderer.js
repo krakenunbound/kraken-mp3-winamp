@@ -267,6 +267,10 @@ async function init() {
 
     // Setup event listeners
     setupEventListeners();
+    // Tell the main process it is now safe to deliver startup/association
+    // file events. did-finish-load alone is too early because init() awaits
+    // background loading before installing these listeners.
+    ipcRenderer.send('kraken:renderer-ready');
 
     if (isV2Docking) {
         setupDockLockUI();
@@ -1973,10 +1977,16 @@ function togglePlay() {
     }
 }
 
-function play() {
-    audio.play();
-    isPlaying = true;
-    updatePlayButton(true);
+async function play() {
+    try {
+        await audio.play();
+        isPlaying = true;
+        updatePlayButton(true);
+    } catch (err) {
+        isPlaying = false;
+        updatePlayButton(false);
+        console.error('Unable to start playback:', err);
+    }
 }
 
 function pause() {

@@ -1,6 +1,6 @@
 {
   "name": "kraken-mp3-winamp",
-  "version": "2.0.1",
+  "version": "2.0.3",
   "description": "Kraken MP3 — multi-window docked player with EQ, visualizers, and effects",
   "main": "src/main.js",
   "scripts": {

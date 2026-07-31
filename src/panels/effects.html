@@ -110,6 +110,11 @@
             flex: none !important;
             min-width: 0 !important;
         }
+        .windows-defaults-btn {
+            width: 100%;
+            flex: none !important;
+            min-width: 0 !important;
+        }
         .viz-mode-buttons {
             flex-wrap: wrap;
         }
@@ -201,6 +206,11 @@
                     <p class="theme-hint">Pick a swatch or type #rrggbb — preview updates here only. Click <strong>Apply</strong> (or Enter) when you want that color on all panels.</p>
                     <div id="customColorGrid" class="custom-color-grid"></div>
                     <button type="button" class="effect-btn theme-reset-btn" id="btnResetCustomColors">Reset custom colors</button>
+                </div>
+                <div class="effects-section">
+                    <div class="effects-section-title">Windows Audio Defaults</div>
+                    <p class="theme-hint">Windows requires you to confirm which app opens each audio type. Kraken cannot change this protected setting automatically.</p>
+                    <button type="button" class="effect-btn windows-defaults-btn" id="btnWindowsDefaults">Choose defaults for Kraken MP3</button>
                 </div>
             </div>
         </div>

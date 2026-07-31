@@ -1,8 +1,8 @@
 # Kraken MP3 (Winamp Edition) — v2.0 Roadmap
 
-**Status:** v2.0.0 shipped; v2.0.1 maintenance release prepared with one taskbar entry, visualizer scaling, overlay fixes, and improved Windows audio registration.
+**Status:** v2.0.3 maintenance release prepared with corrected Windows file associations and first-launch playback.
 
-**Current version:** 2.0.1
+**Current version:** 2.0.3
 **Baseline:** v1.0.x (single Electron window, stacked panels, global particles)  
 **Backup before v2 work:** `F:\Kraken_MP3_Winamp_backup_2026-05-27_1050` (create a fresh dated backup before each major phase)
 

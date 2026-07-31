@@ -261,6 +261,14 @@ document.getElementById('btnResetCustomColors')?.addEventListener('click', () =>
     sendApply('reset-custom-colors');
 });
 
+document.getElementById('btnWindowsDefaults')?.addEventListener('click', async () => {
+    try {
+        await ipcRenderer.invoke('kraken:open-default-apps');
+    } catch (err) {
+        console.error('[Effects panel] Could not open Windows Default Apps:', err);
+    }
+});
+
 if (effectQuantitySlider) {
     effectQuantitySlider.addEventListener('input', () => {
         const val = parseInt(effectQuantitySlider.value, 10);

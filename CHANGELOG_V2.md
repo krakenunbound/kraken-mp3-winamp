@@ -1,5 +1,24 @@
 # Changelog — Kraken MP3 (v2)
 
+## 2.0.3 — 2026-07-31
+
+### Windows default apps
+- Stop writing the machine-wide extension default, which Windows ignores for
+  protected per-user `UserChoice` defaults and which could leave Explorer
+  showing a misleading “Kraken MP3” file type.
+- Repair extension defaults written by older Kraken installers during upgrade.
+- Register Kraken cleanly as an available handler and open its exact Windows
+  Default Apps page from the installer Finish page.
+- Add **Choose defaults for Kraken MP3** to the Effects & Visualizers panel so
+  the Windows confirmation page can be reopened at any time.
+- Correct the `DefaultIcon` resource syntax so Explorer resolves Kraken's icon
+  from the installed executable instead of treating `,0` as part of its path.
+- Queue Windows shell-open files until the renderer explicitly reports that
+  its listeners and audio UI are ready, fixing cold starts that required a
+  second double-click before playback began.
+- Allow association-launched playback without an extra gesture and keep the
+  play/pause state accurate if Chromium rejects a playback request.
+
 ## 2.0.1 — 2026-07-13
 
 ### Brand

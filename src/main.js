@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog, Menu, screen } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, Menu, screen, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { createDockEngine } = require('./main/dockEngine');
@@ -43,6 +43,9 @@ try {
     fs.mkdirSync(cacheDir, { recursive: true });
 } catch (_) { /* ignore */ }
 app.commandLine.appendSwitch('disk-cache-dir', cacheDir);
+// Kraken is a user-launched music player. Files opened through Windows shell
+// associations should begin playback without requiring a second in-app click.
+app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
 
 let mainWindow;
 let playlistWindow;
@@ -62,6 +65,8 @@ let pendingEffectsState = null;
 let pendingThemeSync = null;
 let pendingEffectsSync = null;
 let musicMetadataPromise = null;
+let mainRendererReady = false;
+const pendingOpenFiles = [];
 
 function getMusicMetadata() {
     if (!musicMetadataPromise) {
@@ -72,6 +77,24 @@ function getMusicMetadata() {
 
 function getV2PlayerWindows() {
     return [mainWindow, playlistWindow, vizWindow, eqWindow].filter((w) => w && !w.isDestroyed());
+}
+
+function dispatchOpenFile(filePath) {
+    if (!isAudioFile(filePath)) return;
+    if (!mainRendererReady || !mainWindow || mainWindow.isDestroyed()) {
+        // A shell launch can arrive before the renderer finishes its async
+        // startup. Keep only one copy of each pending path.
+        if (!pendingOpenFiles.includes(filePath)) pendingOpenFiles.push(filePath);
+        return;
+    }
+    mainWindow.webContents.send('file-opened', filePath);
+}
+
+function flushPendingOpenFiles() {
+    if (!mainRendererReady || !mainWindow || mainWindow.isDestroyed()) return;
+    for (const filePath of pendingOpenFiles.splice(0)) {
+        mainWindow.webContents.send('file-opened', filePath);
+    }
 }
 
 function applyV2StackAlwaysOnTop(on) {
@@ -254,13 +277,11 @@ if (!gotTheLock) {
     });
 } else {
     app.on('second-instance', (event, commandLine) => {
+        const filePath = commandLine.find(arg => isAudioFile(arg));
+        if (filePath) dispatchOpenFile(filePath);
         if (mainWindow) {
             if (mainWindow.isMinimized()) mainWindow.restore();
             raiseV2PlayerStack(mainWindow);
-            const filePath = commandLine.find(arg => isAudioFile(arg));
-            if (filePath) {
-                mainWindow.webContents.send('file-opened', filePath);
-            }
         }
     });
 }
@@ -765,14 +786,11 @@ function createV2Windows() {
 
 function wireStartupFileOpen(win) {
     const filePath = process.argv.find(arg => isAudioFile(arg));
-    if (filePath) {
-        win.webContents.once('did-finish-load', () => {
-            win.webContents.send('file-opened', filePath);
-        });
-    }
+    if (filePath) dispatchOpenFile(filePath);
 }
 
 function createWindow() {
+    mainRendererReady = false;
     Menu.setApplicationMenu(null);
     if (IS_V2_DOCKING) {
         createV2Windows();
@@ -787,6 +805,18 @@ function getDialogParent() {
 
 function registerIpcHandlers() {
 ipcMain.handle('kraken:ping', () => ({ ok: true, mode: IS_V2_DOCKING ? 'v2' : 'legacy' }));
+
+ipcMain.on('kraken:renderer-ready', (event) => {
+    if (!mainWindow || mainWindow.isDestroyed() || event.sender !== mainWindow.webContents) return;
+    mainRendererReady = true;
+    flushPendingOpenFiles();
+});
+
+ipcMain.handle('kraken:open-default-apps', async () => {
+    if (process.platform !== 'win32') return { ok: false, reason: 'unsupported-platform' };
+    await shell.openExternal('ms-settings:defaultapps?registeredAppMachine=Kraken%20MP3');
+    return { ok: true };
+});
 
 ipcMain.handle('parse-audio-metadata', async (_event, filePath, options = {}) => {
     if (!isAudioFile(filePath)) {
@@ -1197,9 +1227,7 @@ function startApp() {
 
     app.on('open-file', (event, filePath) => {
         event.preventDefault();
-        if (mainWindow) {
-            mainWindow.webContents.send('file-opened', filePath);
-        }
+        dispatchOpenFile(filePath);
     });
 }
 
