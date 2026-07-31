@@ -6,7 +6,7 @@
 
 ## Overview
 
-**v2 (current / 2.0.1):** Multi-window Winamp-style player with magnetic docking (Main → EQ → Playlist → Visualizer), app-wide particle overlay, and standalone visualizer window.
+**v2 (current / 2.0.3):** Multi-window Winamp-style player with magnetic docking (Main → EQ → Playlist → Visualizer), app-wide particle overlay, and standalone visualizer window.
 
 The project is intentionally focused: local audio playback with familiar Winamp-inspired controls and visual personality, without ads, telemetry, bundled software, or unnecessary background services.
 
@@ -128,8 +128,8 @@ npm run build        # Build v2 NSIS installer + portable executable
 
 ## Build Outputs (dist/)
 
-- `Kraken MP3 Setup 2.0.1.exe` — NSIS installer
-- `Kraken MP3 2.0.1.exe` — portable
+- `Kraken MP3 Setup 2.0.3.exe` — NSIS installer
+- `Kraken MP3 2.0.3.exe` — portable
 - `win-unpacked/` — unpacked directory build  
 
 ## Architecture
@@ -153,6 +153,7 @@ Registered for: `.mp3`, `.flac`, `.wav`, `.ogg`, `.m4a`, `.aac`, `.wma`, `.opus`
 
 ## Version History
 
+- **v2.0.3** — Correct Windows default-app handoff and file icons, add direct Default Apps access, and make associated audio play on the first launch.
 - **v2.0.1** — Single taskbar entry, group minimize/restore, visualizer scaling, overlay fixes, custom palette, and improved Windows audio registration.
 - **v2.0.0** — Dockable Winamp-style panels; album art in visualizer; app-wide particles — [docs/V2_ROADMAP.md](docs/V2_ROADMAP.md)
 - **v1.0.1** — Fix metadata race condition where the previously-loaded track's tags/cover/duration could clobber the current track's display (most visible on `.wav` files). Remove auto-loaded sample track from the player; the sample file remains in `assets/sample/` as a repo-only test asset.

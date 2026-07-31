@@ -1,4 +1,4 @@
-; Kraken MP3 v2 — optional default-player page + file associations
+; Kraken MP3 v2 — Windows audio-handler registration + Default Apps handoff
 
 !include "file-association.nsh"
 
@@ -11,7 +11,7 @@ Var KrakenDefaultCheckbox
 Var KrakenDefaultDialog
 
 !macro KrakenV2Associate EXT LABEL
-  !insertmacro APP_ASSOCIATE "${EXT}" "KrakenMP3V2.${EXT}" "${LABEL} (Kraken MP3)" '"$INSTDIR\${PRODUCT_FILENAME}.exe,0"' "Open with Kraken MP3" '"$INSTDIR\${PRODUCT_FILENAME}.exe" "%1"'
+  !insertmacro APP_ASSOCIATE "${EXT}" "KrakenMP3V2.${EXT}" "${LABEL} (Kraken MP3)" '"$INSTDIR\${PRODUCT_FILENAME}.exe",0' "Open with Kraken MP3" '"$INSTDIR\${PRODUCT_FILENAME}.exe" "%1"'
 !macroend
 
 !macro KrakenV2Capability EXT
@@ -31,7 +31,7 @@ Function KrakenDefaultPageCreate
 
   ${NSD_CreateLabel} 0 0 100% 20u "Audio file handling"
   Pop $0
-  ${NSD_CreateLabel} 0 22u 100% 40u "Register Kraken MP3 for common audio files. Windows may still ask you to confirm the default app in Settings."
+  ${NSD_CreateLabel} 0 22u 100% 40u "Register Kraken MP3 as an available audio app. Windows requires you to confirm the actual defaults in Settings after installation."
   Pop $0
 
   ${NSD_CreateCheckbox} 0 68u 100% 14u "Register for MP3, FLAC, WAV, OGG, M4A, AAC, WMA, and Opus"
@@ -54,6 +54,7 @@ Function KrakenV2RegisterFileAssociations
   WriteRegStr SHELL_CONTEXT "Software\RegisteredApplications" "Kraken MP3" "Software\Kraken MP3\Capabilities"
   WriteRegStr SHELL_CONTEXT "Software\Kraken MP3\Capabilities" "ApplicationName" "Kraken MP3"
   WriteRegStr SHELL_CONTEXT "Software\Kraken MP3\Capabilities" "ApplicationDescription" "Kraken MP3 audio player"
+  WriteRegStr SHELL_CONTEXT "Software\Kraken MP3\Capabilities" "ApplicationIcon" '"$INSTDIR\${PRODUCT_FILENAME}.exe",0'
   WriteRegStr SHELL_CONTEXT "Software\Classes\Applications\${PRODUCT_FILENAME}.exe\shell\open\command" "" '"$INSTDIR\${PRODUCT_FILENAME}.exe" "%1"'
 
   !insertmacro KrakenV2Associate "mp3" "MP3 Audio"
@@ -74,6 +75,24 @@ Function KrakenV2RegisterFileAssociations
   !insertmacro KrakenV2Capability "opus"
   !insertmacro UPDATEFILEASSOC
 FunctionEnd
+
+Function KrakenStartApp
+  ExecShell "open" "$WINDIR\explorer.exe" '"$INSTDIR\${PRODUCT_FILENAME}.exe"'
+FunctionEnd
+
+Function KrakenOpenDefaultApps
+  ExecShell "open" "$WINDIR\explorer.exe" '"ms-settings:defaultapps?registeredAppMachine=Kraken%20MP3"'
+FunctionEnd
+
+!macro customFinishPage
+  !define MUI_FINISHPAGE_RUN
+  !define MUI_FINISHPAGE_RUN_TEXT "Launch Kraken MP3"
+  !define MUI_FINISHPAGE_RUN_FUNCTION "KrakenStartApp"
+  !define MUI_FINISHPAGE_SHOWREADME
+  !define MUI_FINISHPAGE_SHOWREADME_TEXT "Open Windows Default Apps for Kraken MP3 (required to make it the default)"
+  !define MUI_FINISHPAGE_SHOWREADME_FUNCTION "KrakenOpenDefaultApps"
+  !insertmacro MUI_PAGE_FINISH
+!macroend
 
 !macro customInstall
   StrCmp $KrakenSetDefault "1" 0 kraken_skip_default

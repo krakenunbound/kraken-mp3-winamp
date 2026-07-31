@@ -1,16 +1,17 @@
 # Kraken MP3 (v2) — User Guide
 
-**Version:** 2.0.1
+**Version:** 2.0.3
 
 **Product:** Multi-window docked player (Main, EQ, Playlist, Visualizer)
 
 ## Install
 
-1. Download **`Kraken MP3 Setup 2.0.1.exe`** from [GitHub Releases](https://github.com/krakenunbound/kraken-mp3-winamp/releases/latest).
-2. Run the installer. On the **Audio file handling** page, leave registration enabled if you want Kraken offered for **MP3, FLAC, WAV, OGG, M4A, AAC, WMA, and Opus**. Windows may ask you to confirm defaults under **Settings → Apps → Default apps**.
-3. Launch **Kraken MP3** from the Start menu or desktop shortcut.
+1. Download **`Kraken MP3 Setup 2.0.3.exe`** from [GitHub Releases](https://github.com/krakenunbound/kraken-mp3-winamp/releases/latest).
+2. Run the installer. On the **Audio file handling** page, leave registration enabled if you want Kraken offered for **MP3, FLAC, WAV, OGG, M4A, AAC, WMA, and Opus**.
+3. On the final setup page, leave **Open Windows Default Apps for Kraken MP3** checked. In the Windows page that opens, select Kraken MP3 for the audio extensions you want it to handle. Windows protects these per-user choices, so the installer cannot select them for you.
+4. Launch **Kraken MP3** from the Start menu or desktop shortcut.
 
-**Portable:** use **`Kraken MP3 2.0.1.exe`** from the same release page (no installer).
+**Portable:** use **`Kraken MP3 2.0.3.exe`** from the same release page (no installer).
 
 **Local copy after building:** `Install File/` in the project folder (see [Install File/README.md](../Install%20File/README.md)).
 
@@ -81,7 +82,9 @@ Open from the main window. Controls include:
 
 ## Supported formats
 
-MP3, FLAC, WAV, OGG, M4A, AAC, WMA, OPUS — same as v1. If you opted in during install, those types open in Kraken by default (including WMA and Opus). Otherwise use **File → Open** or drag-in.
+MP3, FLAC, WAV, OGG, M4A, AAC, WMA, OPUS — same as v1. Installer registration makes Kraken available for these formats; Windows opens them in Kraken only after you select it in **Default Apps**. You can always use **File → Open** or drag-in without changing defaults.
+
+To change these choices later, open **Effects & Visualizers → Windows Audio Defaults → Choose defaults for Kraken MP3**.
 
 ## Folders
 

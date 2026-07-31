@@ -12,7 +12,7 @@ Two related products live in **two separate folders and GitHub repos**. They can
 | **EQ / playlist** | Toggle panels in the same window | Separate windows with magnetic dock / detach |
 | **App ID (Windows)** | `com.krakenunbound.mp3player` | `com.krakenunbound.mp3player.v2` |
 | **Installer name** | `Kraken MP3 Setup …` | `Kraken MP3 Setup …` (v2 release line) |
-| **Current line** | Stable **1.0.x** | **2.0.1** (docking + new visualizers) |
+| **Current line** | Stable **1.0.x** | **2.0.3** (docking + new visualizers) |
 
 ## Which one should I use?
 
