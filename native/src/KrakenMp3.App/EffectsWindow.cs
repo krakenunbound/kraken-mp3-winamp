@@ -20,8 +20,8 @@ public sealed class EffectsWindow : Window
     private readonly MainWindow _host;
     private readonly List<(Button B, Func<bool> Active)> _toggles = [];
     private readonly StackPanel _customRows = new();
-    private Slider? _qty, _size, _speed;
-    private TextBlock? _qtyVal, _sizeVal, _speedVal;
+    private Slider? _qty, _size, _speed, _opacity;
+    private TextBlock? _qtyVal, _sizeVal, _speedVal, _opacityVal;
     private bool _syncing;
 
     public EffectsWindow(MainWindow host)
@@ -54,6 +54,8 @@ public sealed class EffectsWindow : Window
         body.Children.Add(SliderRow("Quantity", 5, 100, out _qty, out _qtyVal));
         body.Children.Add(SliderRow("Size", 1, 20, out _size, out _sizeVal));
         body.Children.Add(SliderRow("Speed", 1, 100, out _speed, out _speedVal));
+        body.Children.Add(SliderRow("Opacity %", 10, 300, out _opacity, out _opacityVal));
+        body.Children.Add(Hint("On a green, magenta, black or transparent visualizer background the particles are also drawn inside the visualizer, solid, so OBS captures them and the key keeps them. Raise Opacity to make faint effects stronger."));
 
         Section(body, "Audio Visualizers");
         body.Children.Add(Buttons(Enum.GetValues<VizMode>().Select(m =>
@@ -95,6 +97,7 @@ public sealed class EffectsWindow : Window
         _qty!.Value = s.EffectQuantity; _qtyVal!.Text = s.EffectQuantity.ToString();
         _size!.Value = s.EffectSize; _sizeVal!.Text = s.EffectSize.ToString();
         _speed!.Value = s.EffectSpeed; _speedVal!.Text = s.EffectSpeed.ToString();
+        _opacity!.Value = s.EffectOpacity; _opacityVal!.Text = s.EffectOpacity.ToString();
         foreach (var (b, active) in _toggles) b.Tag = active() ? "active" : null;
         BuildCustomRows();
         _syncing = false;
@@ -144,7 +147,7 @@ public sealed class EffectsWindow : Window
     private DockPanel SliderRow(string label, int min, int max, out Slider slider, out TextBlock value)
     {
         var row = new DockPanel { Margin = new Thickness(1, 1, 1, 3) };
-        var l = new TextBlock { Text = label, Width = 56, FontSize = 10, VerticalAlignment = VerticalAlignment.Center };
+        var l = new TextBlock { Text = label, Width = 62, FontSize = 10, VerticalAlignment = VerticalAlignment.Center };
         l.SetResourceReference(TextBlock.ForegroundProperty, "TextHi");
         DockPanel.SetDock(l, Dock.Left);
         var v = new TextBlock { Width = 28, FontSize = 10, TextAlignment = TextAlignment.Right, VerticalAlignment = VerticalAlignment.Center };
@@ -154,7 +157,8 @@ public sealed class EffectsWindow : Window
         s.ValueChanged += (_, _) =>
         {
             v.Text = ((int)s.Value).ToString();
-            if (!_syncing) _host.SetParticleSettings((int)_qty!.Value, (int)_size!.Value, (int)_speed!.Value);
+            if (!_syncing && _opacity != null)
+                _host.SetParticleSettings((int)_qty!.Value, (int)_size!.Value, (int)_speed!.Value, (int)_opacity.Value);
         };
         row.Children.Add(l);
         row.Children.Add(v);

@@ -50,6 +50,8 @@ public sealed class AppSettings
     public int EffectQuantity { get; set; } = 25;
     public int EffectSize { get; set; } = 8;
     public int EffectSpeed { get; set; } = 30;
+    /// <summary>Particle opacity in percent, 10–300 (100 = as designed).</summary>
+    public int EffectOpacity { get; set; } = 100;
 
     public bool AlwaysOnTop { get; set; }
     public WindowPlacement Main { get; set; } = new();
@@ -108,6 +110,7 @@ public sealed class AppSettings
         EffectQuantity = Math.Clamp(EffectQuantity, 5, 100);
         EffectSize = Math.Clamp(EffectSize, 1, 20);
         EffectSpeed = Math.Clamp(EffectSpeed, 1, 100);
+        EffectOpacity = EffectOpacity == 0 ? 100 : Math.Clamp(EffectOpacity, 10, 300);
         return this;
     }
 }

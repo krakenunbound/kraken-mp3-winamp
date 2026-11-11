@@ -8,7 +8,7 @@
     <RootNamespace>KrakenMp3.App</RootNamespace>
     <AssemblyName>Kraken MP3</AssemblyName>
     <ApplicationIcon>..\..\..\assets\icons\icon.ico</ApplicationIcon>
-    <Version>3.0.1</Version>
+    <Version>3.0.2</Version>
     <Product>Kraken MP3</Product>
     <Company>Kraken Unbound</Company>
     <Authors>The Kraken (Kraken Unbound)</Authors>

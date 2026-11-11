@@ -1,5 +1,13 @@
 # Kraken MP3 — v3 changelog
 
+## 3.0.2 — 2026-11-10
+
+- Particle **Opacity** slider (10–300 %) in Effects & Visualizers.
+- On a green, magenta, black or transparent visualizer background, particles
+  are drawn inside the visualizer window itself (so OBS Window Capture records
+  them) and drawn solid, so a chroma/luma key keeps them instead of removing
+  their see-through pixels along with the background.
+
 ## 3.0.1 — 2026-11-10
 
 - Follows Windows' default playback device: change speakers/headphones in

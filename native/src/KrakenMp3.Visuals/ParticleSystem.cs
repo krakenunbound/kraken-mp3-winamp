@@ -35,6 +35,9 @@ public sealed class ParticleSystem : IDisposable
 
     public ParticleTheme Theme { get; set; } = Themes.Kraken;
     public float Scale { get; set; } = 1f;
+    /// <summary>Multiplies every particle's opacity (1 = v2 look; up to 3 makes
+    /// the see-through effects close to solid).</summary>
+    public float Opacity { get; set; } = 1f;
     /// <summary>5–100.</summary>
     public int Quantity { get; private set; } = 25;
     /// <summary>1–20.</summary>
@@ -189,6 +192,29 @@ public sealed class ParticleSystem : IDisposable
             default:
                 return new P();
         }
+    }
+
+    // Key-safe drawing: inside a layer, alpha is pushed up hard (a' = 10a − 1)
+    // so anything above ~10 % opacity becomes solid and faint halos drop out.
+    private static readonly SKPaint SolidLayer = new()
+    {
+        ColorFilter = SKColorFilter.CreateColorMatrix(
+        [
+            1, 0, 0, 0, 0,
+            0, 1, 0, 0, 0,
+            0, 0, 1, 0, 0,
+            0, 0, 0, 10, -1f,
+        ]),
+    };
+
+    /// <summary>Like <see cref="Tick"/>, but every particle comes out solid, for
+    /// chroma/luma-key backgrounds: a key removes see-through pixels together
+    /// with the background, so translucent particles would mostly vanish.</summary>
+    public void TickSolid(SKCanvas c, float dt, double now)
+    {
+        c.SaveLayer(SolidLayer);
+        Tick(c, dt, now);
+        c.Restore();
     }
 
     /// <summary>Advances and draws one frame. <paramref name="now"/> in seconds.</summary>
@@ -366,7 +392,7 @@ public sealed class ParticleSystem : IDisposable
         }
     }
 
-    private static byte A(float a) => (byte)Math.Clamp(a * 255, 0, 255);
+    private byte A(float a) => (byte)Math.Clamp(a * Opacity * 255, 0, 255);
 
     public void Dispose()
     {
