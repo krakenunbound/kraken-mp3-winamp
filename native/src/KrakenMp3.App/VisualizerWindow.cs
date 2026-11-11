@@ -34,6 +34,9 @@ public sealed class VisualizerWindow : Window
     private readonly Button _modeButton, _artButton, _bgButton;
     private readonly Border _titleBar;
     private byte[]? _artData;
+    private ParticleSystem? _particles;
+    private readonly System.Diagnostics.Stopwatch _fxClock = System.Diagnostics.Stopwatch.StartNew();
+
 
     public VizBackground BackgroundMode { get; private set; }
     public long FramesDrawn { get; private set; }
@@ -44,6 +47,20 @@ public sealed class VisualizerWindow : Window
         get => _renderer.Mode;
         set { _renderer.Mode = value; UpdateButtons(); }
     }
+
+    /// <summary>Particle settings for drawing particles inside the visualizer
+    /// (used on key/transparent backgrounds, where OBS captures only this window).</summary>
+    public void SetParticles(ParticleEffect effect, int quantity, int size, int speed, float opacity, ParticleTheme theme)
+    {
+        if (effect == ParticleEffect.None) { _particles?.Dispose(); _particles = null; return; }
+        _particles ??= new ParticleSystem();
+        _particles.Theme = theme;
+        _particles.Opacity = opacity;
+        _particles.SetSettings(quantity, size, speed);
+        _particles.Effect = effect;
+    }
+
+    public void TriggerBurst() => _particles?.TriggerBurst();
 
     /// <summary>Theme colours for the bars and the art's glow.</summary>
     public void SetTheme(VizTheme theme)
@@ -128,6 +145,7 @@ public sealed class VisualizerWindow : Window
             _frameTimer.Stop();
             _renderer.Dispose();
             _art.Dispose();
+            _particles?.Dispose();
         };
         UpdateButtons();
     }
@@ -242,6 +260,12 @@ public sealed class VisualizerWindow : Window
         if (Mode == VizMode.Wave) _player.GetWaveform(_wave);
         _renderer.Draw(canvas, e.Info.Width, e.Info.Height, _spectrum, _wave, dt);
         _art.Draw(canvas, e.Info.Width, e.Info.Height, dt);
+        if (_particles != null && BackgroundMode != VizBackground.Normal)
+        {
+            _particles.Scale = scale;
+            _particles.Resize(e.Info.Width, e.Info.Height);
+            _particles.TickSolid(canvas, (float)dt, _fxClock.Elapsed.TotalSeconds);
+        }
 
         FramesDrawn++;
         _lastFrameMs = Environment.TickCount64;

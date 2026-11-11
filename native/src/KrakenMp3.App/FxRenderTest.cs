@@ -53,6 +53,39 @@ public static class FxRenderTest
             }
         }
 
+        // Green-key check: v2-style translucent vs key-safe solid, 100 % and 300 % opacity.
+        var keyPng = Path.Combine(Path.GetDirectoryName(outPng)!, Path.GetFileNameWithoutExtension(outPng) + "-key.png");
+        var modes = new (string Label, bool Solid, float Opacity)[] { ("as before", false, 1f), ("solid", true, 1f), ("solid, 300 %", true, 3f) };
+        using (var keySheet = SKSurface.Create(new SKImageInfo(Pad + effects.Count * (W + Pad), Pad + modes.Length * (H + Label + Pad))))
+        {
+            keySheet.Canvas.Clear(new SKColor(30, 30, 30));
+            for (int m = 0; m < modes.Length; m++)
+            {
+                for (int i = 0; i < effects.Count; i++)
+                {
+                    using var ps = new ParticleSystem { Theme = Themes.Particles(Themes.Get("red")), Opacity = modes[m].Opacity };
+                    ps.Resize(W, H);
+                    ps.SetSettings(60, 10, 50);
+                    ps.Effect = effects[i];
+                    using var tile = SKSurface.Create(new SKImageInfo(W, H));
+                    for (int f = 0; f < 240; f++)
+                    {
+                        tile.Canvas.Clear(new SKColor(0, 255, 0));
+                        if (modes[m].Solid) ps.TickSolid(tile.Canvas, 1 / 60f, f / 60.0);
+                        else ps.Tick(tile.Canvas, 1 / 60f, f / 60.0);
+                    }
+                    int x = Pad + i * (W + Pad), y = Pad + m * (H + Label + Pad);
+                    keySheet.Canvas.DrawText($"{ParticleSystem.Label(effects[i])} — {modes[m].Label}", x, y + 11, text);
+                    using var img = tile.Snapshot();
+                    keySheet.Canvas.DrawImage(img, x, y + Label);
+                }
+            }
+            using var ks = keySheet.Snapshot();
+            using var kd = ks.Encode(SKEncodedImageFormat.Png, 100);
+            using var kf = File.Create(keyPng);
+            kd.SaveTo(kf);
+        }
+
         // Timing: one frame of each effect over a full 440×800 stack at quantity 100.
         using (var bench = SKSurface.Create(new SKImageInfo(440, 800)))
         {

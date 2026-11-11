@@ -12,7 +12,7 @@ SetCompressor /SOLID lzma
 
 !define APPNAME   "Kraken MP3"
 !ifndef VERSION
-  !define VERSION "3.0.1"   ; build-release.ps1 passes the csproj version
+  !define VERSION "3.0.2"   ; build-release.ps1 passes the csproj version
 !endif
 !define EXE       "Kraken MP3.exe"
 !define UNINST    "Uninstall Kraken MP3.exe"

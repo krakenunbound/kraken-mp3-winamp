@@ -176,6 +176,7 @@ public partial class MainWindow : Window
         Topmost = s.AlwaysOnTop;
         _particles.Effect = Enum.TryParse<ParticleEffect>(s.Effect, out var fx) ? fx : ParticleEffect.Bubbles;
         _particles.SetSettings(s.EffectQuantity, s.EffectSize, s.EffectSpeed);
+        _particles.Opacity = s.EffectOpacity / 100f;
         ApplyTheme();
         UpdateModeButtons();
         _restoring = false;
@@ -306,7 +307,7 @@ public partial class MainWindow : Window
             Player.Open(item.Path);
             if (startAt > 0) Player.Position = TimeSpan.FromSeconds(startAt);
             if (play) Player.Play();
-            if (play) _particles.TriggerBurst(); // v2: burst on every track change
+            if (play) { _particles.TriggerBurst(); Viz?.TriggerBurst(); } // v2: burst on every track change
             _failStreak = 0;
             if (row != null) row.Failed = false;
         }
@@ -501,7 +502,10 @@ public partial class MainWindow : Window
     private PxRect? StackBounds()
     {
         if (WindowState != WindowState.Normal || !IsVisible) return null;
-        var group = Dock.GroupOfLeader().Where(w => w == EqWin || w == PlWindow || w == Viz).ToList();
+        // A visualizer on a key background draws its own (solid) particles, so
+        // the overlay leaves it out rather than double-drawing on top of it.
+        var group = Dock.GroupOfLeader()
+            .Where(w => w == EqWin || w == PlWindow || (w == Viz && Viz.BackgroundMode == VizBackground.Normal)).ToList();
         if (group.Count == 0) return null;
         group.Add(this);
         var b = Dock.Bounds(group);
@@ -532,20 +536,31 @@ public partial class MainWindow : Window
     /// <summary>Keeps the overlay above the stack when any stack window comes forward.</summary>
     private void HookStack(Window w) => w.Activated += (_, _) => _overlay?.Raise(Topmost);
 
+    /// <summary>Gives the visualizer the current particle settings.</summary>
+    private void PushVizParticles()
+    {
+        var s = Settings;
+        Viz?.SetParticles(_particles.Effect, s.EffectQuantity, s.EffectSize, s.EffectSpeed, s.EffectOpacity / 100f, Themes.Particles(CurrentTheme));
+    }
+
     public void SetParticleEffect(ParticleEffect fx)
     {
         _particles.Effect = fx;
         Settings.Effect = fx.ToString();
+        PushVizParticles();
         FxWin?.Refresh();
         ScheduleSave();
     }
 
-    public void SetParticleSettings(int quantity, int size, int speed)
+    public void SetParticleSettings(int quantity, int size, int speed, int opacityPercent)
     {
         Settings.EffectQuantity = quantity;
         Settings.EffectSize = size;
         Settings.EffectSpeed = speed;
+        Settings.EffectOpacity = Math.Clamp(opacityPercent, 10, 300);
         _particles.SetSettings(quantity, size, speed);
+        _particles.Opacity = Settings.EffectOpacity / 100f;
+        PushVizParticles();
         ScheduleSave();
     }
 
@@ -581,6 +596,7 @@ public partial class MainWindow : Window
         var viz = Themes.Viz(CurrentTheme);
         Viz?.SetTheme(viz);
         _particles.Theme = Themes.Particles(CurrentTheme);
+        PushVizParticles();
         _miniLo = new SKColor(CurrentTheme.Accent.R, CurrentTheme.Accent.G, CurrentTheme.Accent.B);
         _miniHi = new SKColor(CurrentTheme.AccentBright.R, CurrentTheme.AccentBright.G, CurrentTheme.AccentBright.B);
         ClockGlow.Color = CurrentTheme.Lcd;
@@ -698,6 +714,7 @@ public partial class MainWindow : Window
         }
         AttachViz(Viz);
         Viz.SetTheme(Themes.Viz(CurrentTheme));
+        PushVizParticles();
         HookStack(Viz);
         Dock.Register(Viz);
         Viz.Show();
@@ -749,7 +766,7 @@ public partial class MainWindow : Window
         _vizBg = bg;
         if (Viz != null)
         {
-            if (Viz.NeedsNewWindowFor(bg)) Viz.Recreate(bg, beforeClose: n => { Viz = n; AttachViz(n); Dock.Register(n); n.SetTheme(Themes.Viz(CurrentTheme)); HookStack(n); });
+            if (Viz.NeedsNewWindowFor(bg)) Viz.Recreate(bg, beforeClose: n => { Viz = n; AttachViz(n); Dock.Register(n); n.SetTheme(Themes.Viz(CurrentTheme)); HookStack(n); PushVizParticles(); });
             else Viz.ApplyBackground(bg);
         }
         ScheduleSave();
