@@ -8,9 +8,15 @@ let waterfallBuffer = null;
 let waterfallBufW = 0;
 let waterfallBufH = 0;
 
+// "Bare" mode is for chroma-key / OBS overlays: only lit elements are drawn,
+// fully opaque, with no dim grid, translucent fills or background washes, so
+// a key filter removes the background cleanly without eating bar edges.
+let bareMode = false;
+function setBareMode(on) { bareMode = !!on; }
+
 function themeColor(theme, i, count, alpha = 0.8) {
     const hue = theme.hueBase + (i / count) * (theme.hueRange || 40);
-    return `hsla(${hue}, ${theme.saturation ?? 80}%, 50%, ${alpha})`;
+    return `hsla(${hue}, ${theme.saturation ?? 80}%, 50%, ${bareMode ? 1 : alpha})`;
 }
 
 /** Map canvas column x across all FFT bins (linear or log frequency axis). */
@@ -101,6 +107,7 @@ function drawLed(ctx, canvas, freqData, theme) {
         for (let s = 0; s < segments; s++) {
             const y = canvas.height - (s + 1) * segH;
             const on = s < lit;
+            if (!on && bareMode) continue;
             ctx.fillStyle = on
                 ? themeColor(theme, c, cols, 0.85)
                 // Off-state is visible so the grid reads as a grid even when
@@ -129,14 +136,18 @@ function drawSpectrum(ctx, canvas, freqData, theme) {
     for (let x = 0; x < w; x++) ctx.lineTo(x, yFor(x));
     ctx.lineTo(w, h);
     ctx.closePath();
-    const grad = ctx.createLinearGradient(0, 0, 0, h);
-    grad.addColorStop(0, `rgba(${ar}, ${ag}, ${ab}, 0.55)`);
-    grad.addColorStop(1, `rgba(${ar}, ${ag}, ${ab}, 0.02)`);
-    ctx.fillStyle = grad;
+    if (bareMode) {
+        ctx.fillStyle = `rgb(${ar}, ${ag}, ${ab})`;
+    } else {
+        const grad = ctx.createLinearGradient(0, 0, 0, h);
+        grad.addColorStop(0, `rgba(${ar}, ${ag}, ${ab}, 0.55)`);
+        grad.addColorStop(1, `rgba(${ar}, ${ag}, ${ab}, 0.02)`);
+        ctx.fillStyle = grad;
+    }
     ctx.fill();
 
     ctx.lineWidth = 2;
-    ctx.strokeStyle = `rgba(${ar}, ${ag}, ${ab}, 0.9)`;
+    ctx.strokeStyle = `rgba(${ar}, ${ag}, ${ab}, ${bareMode ? 1 : 0.9})`;
     ctx.beginPath();
     for (let x = 0; x < w; x++) {
         const y = yFor(x);
@@ -151,7 +162,7 @@ function drawWave(ctx, canvas, data, theme) {
     const bufferLength = data.length;
     ctx.lineWidth = 2;
     const [ar, ag, ab] = theme.accentRgb || [59, 158, 190];
-    ctx.strokeStyle = `rgba(${ar}, ${ag}, ${ab}, 0.85)`;
+    ctx.strokeStyle = `rgba(${ar}, ${ag}, ${ab}, ${bareMode ? 1 : 0.85})`;
     ctx.beginPath();
     const sliceWidth = canvas.width / bufferLength;
     let x = 0;
@@ -187,6 +198,7 @@ function drawCircle(ctx, canvas, freqData, theme) {
         ctx.lineTo(x2, y2);
         ctx.stroke();
     }
+    if (bareMode) return;
     const [cr, cg, cb] = theme.accentRgb || [59, 158, 190];
     ctx.beginPath();
     ctx.arc(centerX, centerY, radius * 0.3, 0, Math.PI * 2);
@@ -285,5 +297,6 @@ module.exports = {
     drawCircle,
     drawWaterfall,
     drawVisualizerMode,
-    resetWaterfall
+    resetWaterfall,
+    setBareMode
 };

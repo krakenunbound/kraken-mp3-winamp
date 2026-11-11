@@ -25,6 +25,10 @@ let playlist = [];
 let currentIndex = 0;
 let isPlaying = false;
 let isShuffle = false;
+let shuffleHistory = [];       // file paths in the order they played
+let shufflePos = -1;           // position of the current track in shuffleHistory
+let shufflePlayed = new Set(); // paths already heard this shuffle cycle
+let shuffleNavigating = false; // set while stepping through existing history
 let repeatMode = 0; // 0: off, 1: all, 2: one
 let backgroundImages = [];
 let currentBgIndex = 0;
@@ -595,7 +599,16 @@ function broadcastVizConfig() {
     });
 }
 
+// Backup driver for the satellite visualizer: requestAnimationFrame stops
+// while the main window is minimized (or otherwise not painting), so a timer
+// keeps frames flowing at ~30 fps whenever rAF has stalled.
+let lastVizBroadcastAt = 0;
+setInterval(() => {
+    if (isV2Docking && performance.now() - lastVizBroadcastAt > 60) broadcastVizFrame();
+}, 33);
+
 function broadcastVizFrame() {
+    lastVizBroadcastAt = performance.now();
     if (!isV2Docking || !showVizPanel || currentViz === 'none' || !analyser || !dataArray) return;
     analyser.getByteFrequencyData(dataArray);
     const payload = { mode: currentViz, freq: Uint8Array.from(dataArray) };
@@ -2009,7 +2022,13 @@ function playPrevious() {
     }
 
     if (isShuffle) {
-        currentIndex = Math.floor(Math.random() * playlist.length);
+        const prev = shufflePreviousIndex();
+        if (prev < 0) {
+            audio.currentTime = 0;
+            return;
+        }
+        shuffleNavigating = true;
+        currentIndex = prev;
     } else {
         currentIndex = (currentIndex - 1 + playlist.length) % playlist.length;
     }
@@ -2022,7 +2041,9 @@ function playNext() {
     if (playlist.length === 0) return;
 
     if (isShuffle) {
-        currentIndex = Math.floor(Math.random() * playlist.length);
+        const next = shuffleNextIndex(true);
+        if (next < 0) return;
+        currentIndex = next;
     } else {
         currentIndex = (currentIndex + 1) % playlist.length;
     }
@@ -2031,10 +2052,92 @@ function playNext() {
     play();
 }
 
+// ----------------------------------------------------------------------------
+// Smart shuffle: every track plays once per cycle (no repeats until the whole
+// playlist has been heard), Previous walks back through what actually played,
+// and Next after Previous walks forward through that same history. Tracks are
+// keyed by file path so add/remove/reorder never desyncs the history.
+// ----------------------------------------------------------------------------
+function resetShuffleState() {
+    shuffleHistory = [];
+    shufflePos = -1;
+    shufflePlayed = new Set();
+    shuffleNavigating = false;
+    const cur = playlist[currentIndex];
+    if (cur) {
+        shuffleHistory.push(cur);
+        shufflePos = 0;
+        shufflePlayed.add(cur);
+    }
+}
+
+function recordShufflePlay(index) {
+    const filePath = playlist[index];
+    if (!filePath) return;
+    if (shuffleNavigating) {
+        shuffleNavigating = false;
+        const at = shuffleHistory.indexOf(filePath, Math.max(0, shufflePos - 1));
+        if (at >= 0) shufflePos = at;
+        shufflePlayed.add(filePath);
+        return;
+    }
+    if (shuffleHistory[shufflePos] === filePath) return; // reload of same track
+    shuffleHistory = shuffleHistory.slice(0, shufflePos + 1);
+    shuffleHistory.push(filePath);
+    if (shuffleHistory.length > 2000) shuffleHistory.shift();
+    shufflePos = shuffleHistory.length - 1;
+    shufflePlayed.add(filePath);
+}
+
+/** Index of the next shuffled track, or -1. allowWrap starts a new cycle. */
+function shuffleNextIndex(allowWrap) {
+    // Forward through history first (user pressed Previous, then Next).
+    while (shufflePos >= 0 && shufflePos < shuffleHistory.length - 1) {
+        const idx = playlist.indexOf(shuffleHistory[shufflePos + 1]);
+        if (idx >= 0) {
+            shuffleNavigating = true;
+            shufflePos += 1;
+            return idx;
+        }
+        shuffleHistory.splice(shufflePos + 1, 1); // track was removed
+    }
+    const current = playlist[currentIndex];
+    let pool = [];
+    playlist.forEach((p, i) => { if (!shufflePlayed.has(p) && p !== current) pool.push(i); });
+    if (!pool.length) {
+        if (!allowWrap || playlist.length < 2) return -1;
+        // Whole playlist heard: start a fresh cycle, never repeating the
+        // track that just finished back-to-back.
+        shufflePlayed = new Set(current ? [current] : []);
+        playlist.forEach((p, i) => { if (p !== current) pool.push(i); });
+    }
+    return pool[Math.floor(Math.random() * pool.length)];
+}
+
+function shufflePreviousIndex() {
+    while (shufflePos > 0) {
+        const idx = playlist.indexOf(shuffleHistory[shufflePos - 1]);
+        if (idx >= 0) return idx;
+        shuffleHistory.splice(shufflePos - 1, 1);
+        shufflePos -= 1;
+    }
+    return -1;
+}
+
 function handleTrackEnd() {
     if (repeatMode === 2) {
         audio.currentTime = 0;
         play();
+    } else if (isShuffle) {
+        const next = shuffleNextIndex(repeatMode === 1);
+        if (next >= 0) {
+            currentIndex = next;
+            loadTrack(currentIndex);
+            play();
+        } else {
+            isPlaying = false;
+            updatePlayButton(false);
+        }
     } else if (currentIndex < playlist.length - 1 || repeatMode === 1) {
         playNext();
     } else {
@@ -2046,6 +2149,7 @@ function handleTrackEnd() {
 function toggleShuffle() {
     isShuffle = !isShuffle;
     btnShuffle.classList.toggle('active', isShuffle);
+    if (isShuffle) resetShuffleState();
     saveSettings();
 }
 
@@ -2323,10 +2427,12 @@ function isAudioFile(filePath) {
 function replacePlaylist(files) {
     playlist = files;
     playlistMeta = new Array(files.length).fill(null);
-    currentIndex = 0;
-    selectedPlaylistIdx = 0;
+    // In shuffle mode a freshly opened playlist starts on a random track.
+    currentIndex = isShuffle && files.length > 1 ? Math.floor(Math.random() * files.length) : 0;
+    selectedPlaylistIdx = currentIndex;
+    shuffleHistory = []; shufflePos = -1; shufflePlayed = new Set(); shuffleNavigating = false;
     renderPlaylist();
-    loadTrack(0);
+    loadTrack(currentIndex);
     play();
     loadAllPlaylistMeta();
 }
@@ -2362,6 +2468,8 @@ async function loadTrack(index) {
 
     const filePath = playlist[index];
     audio.src = filePath;
+    if (isShuffle) recordShufflePlay(index);
+    else shuffleNavigating = false;
 
     await loadMetadata(filePath);
     renderPlaylist();

@@ -143,6 +143,7 @@ function createEffectsOverlayManager({ getStackWindows, getDockState, appRoot, o
                 nodeIntegration: true,
                 contextIsolation: false,
                 enableRemoteModule: false,
+                backgroundThrottling: false,
                 additionalArguments: ['--v2-docking', '--kraken-panel=overlay']
             }
         });

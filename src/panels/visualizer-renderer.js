@@ -2,7 +2,7 @@
 
 const { ipcRenderer } = require('electron');
 const { getVizTheme } = require('../shared/vizThemes');
-const { drawVisualizerMode, resetWaterfall } = require('../shared/canvasViz');
+const { drawVisualizerMode, resetWaterfall, setBareMode } = require('../shared/canvasViz');
 const { installThemeListener } = require('../shared/themeClient');
 const { applyDockStackChrome } = require('../shared/uiThemes');
 
@@ -11,7 +11,50 @@ const floatingAlbumStage = document.getElementById('floatingAlbumStage');
 const floatingAlbum = document.getElementById('floatingAlbum');
 const floatingAlbumImg = document.getElementById('floatingAlbumImg');
 const btnVizClose = document.getElementById('btnVizClose');
+const btnVizArt = document.getElementById('btnVizArt');
+const btnVizBg = document.getElementById('btnVizBg');
 const vizBody = document.getElementById('vizBody');
+
+// ── Visualizer-window options (ART / BG title-bar buttons) ──────────────
+const FLOAT_ART_CYCLE = ['off', 'float', 'bounce'];
+const FLOAT_ART_LABEL = { off: 'Off', float: 'Float', bounce: 'Bounce' };
+// normal = themed panel; green / magenta / black = solid chroma-key colour
+// with bars only (for an OBS Chroma Key / Color Key / Luma Key filter).
+const BG_CYCLE = ['normal', 'green', 'magenta', 'black'];
+const BG_LABEL = {
+    normal: 'Normal',
+    green: 'Green screen (OBS Chroma Key)',
+    magenta: 'Magenta screen (OBS Chroma Key, best for green bars)',
+    black: 'Black (OBS Luma Key)'
+};
+const BG_STORAGE_KEY = 'krakenVizBackground';
+let vizBackground = 'normal';
+
+function loadVizBackground() {
+    try {
+        const v = localStorage.getItem(BG_STORAGE_KEY);
+        if (v && BG_CYCLE.includes(v)) return v;
+    } catch { /* storage unavailable */ }
+    return 'normal';
+}
+
+function applyVizBackground(mode) {
+    vizBackground = BG_CYCLE.includes(mode) ? mode : 'normal';
+    BG_CYCLE.forEach((m) => document.body.classList.toggle(`viz-bg-${m}`, m === vizBackground && m !== 'normal'));
+    setBareMode(vizBackground !== 'normal');
+    if (currentViz === 'waterfall') resetWaterfall();
+    if (btnVizBg) {
+        btnVizBg.classList.toggle('active', vizBackground !== 'normal');
+        btnVizBg.title = `Background: ${BG_LABEL[vizBackground]} — click to change`;
+    }
+    try { localStorage.setItem(BG_STORAGE_KEY, vizBackground); } catch { /* ignore */ }
+}
+
+function updateArtButton() {
+    if (!btnVizArt) return;
+    btnVizArt.classList.toggle('active', floatArtMode !== 'off');
+    btnVizArt.title = `Floating album art: ${FLOAT_ART_LABEL[floatArtMode] || 'Off'} — click to change`;
+}
 
 const FLOAT_ART_SIZE = 180;
 const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -66,6 +109,7 @@ function applyFloatArtMode(mode) {
     floatingAlbumStage.classList.remove('mode-float', 'mode-bounce', 'active');
     if (mode === 'float') floatingAlbumStage.classList.add('mode-float');
     else if (mode === 'bounce') floatingAlbumStage.classList.add('mode-bounce');
+    updateArtButton();
     syncFloatingAlbumArt();
 }
 
@@ -177,6 +221,28 @@ if (btnVizClose) {
     btnVizClose.addEventListener('click', () => ipcRenderer.send('kraken:window:close-viz'));
 }
 
+if (btnVizArt) {
+    btnVizArt.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const i = FLOAT_ART_CYCLE.indexOf(floatArtMode);
+        const next = FLOAT_ART_CYCLE[(i + 1) % FLOAT_ART_CYCLE.length];
+        applyFloatArtMode(next);
+        // The main window owns this setting (saves it, re-sends the art).
+        ipcRenderer.send('kraken:effects:apply', { action: 'set-float-art', floatArtMode: next });
+    });
+}
+
+if (btnVizBg) {
+    btnVizBg.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const i = BG_CYCLE.indexOf(vizBackground);
+        applyVizBackground(BG_CYCLE[(i + 1) % BG_CYCLE.length]);
+    });
+}
+
+applyVizBackground(loadVizBackground());
+updateArtButton();
+
 document.querySelectorAll('.dock-lock-btn').forEach((btn) => {
     btn.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -190,7 +256,8 @@ ipcRenderer.on('kraken:viz:album-art', (_e, payload) => {
     if (!floatingAlbumImg) return;
     if (!payload || !payload.url) {
         floatingAlbumImg.removeAttribute('src');
-        syncFloatingAlbumArt();
+        if (payload && payload.mode !== undefined) applyFloatArtMode(payload.mode);
+        else syncFloatingAlbumArt();
         return;
     }
     if (payload.mode !== undefined) applyFloatArtMode(payload.mode);
