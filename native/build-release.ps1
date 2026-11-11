@@ -32,7 +32,7 @@ if (-not $makensis) {
         Where-Object { $_.DirectoryName -notmatch 'linux|mac' } | Select-Object -First 1 -ExpandProperty FullName
 }
 if (-not $makensis) { throw 'makensis.exe not found (install NSIS 3)' }
-& $makensis -V2 (Join-Path $native 'installer\KrakenMP3.nsi')
+& $makensis -V2 "/DVERSION=$version" (Join-Path $native 'installer\KrakenMP3.nsi')
 if ($LASTEXITCODE) { throw 'NSIS failed' }
 
 $out = Join-Path $repo 'Install File'
