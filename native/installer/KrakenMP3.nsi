@@ -1,4 +1,4 @@
-; Kraken MP3 3.0.0 (native) installer
+; Kraken MP3 3.x (native) installer
 ;
 ; Build:  makensis native\installer\KrakenMP3.nsi   (after `dotnet publish` to native\publish\folder)
 ;
@@ -11,7 +11,9 @@ Unicode true
 SetCompressor /SOLID lzma
 
 !define APPNAME   "Kraken MP3"
-!define VERSION   "3.0.0"
+!ifndef VERSION
+  !define VERSION "3.0.1"   ; build-release.ps1 passes the csproj version
+!endif
 !define EXE       "Kraken MP3.exe"
 !define UNINST    "Uninstall Kraken MP3.exe"
 !define GUID      "5409cd53-7121-5c05-90d4-9a9096eaa086"

@@ -32,6 +32,13 @@ public partial class App : Application
             return;
         }
 
+        // Output-device switching test (no window): --devicetest <song> <out.txt>
+        if (args.Length > 2 && args[0] == "--devicetest")
+        {
+            Shutdown(DeviceTest.Run(args[1], args[2]));
+            return;
+        }
+
         // Off-screen render of every particle effect: --fxrender <out.png>
         if (args.Length > 1 && args[0] == "--fxrender")
         {

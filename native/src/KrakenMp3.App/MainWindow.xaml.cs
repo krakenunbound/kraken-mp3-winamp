@@ -99,6 +99,15 @@ public partial class MainWindow : Window
 
         Player.TrackEnded += (_, _) => Dispatcher.BeginInvoke(OnTrackEnded);
         Player.DurationChanged += (_, _) => Dispatcher.BeginInvoke(OnDurationChanged);
+        // Follow Windows' default output. Windows fires several notifications per
+        // switch (one per role), so wait for them to settle first.
+        var deviceTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(300) };
+        deviceTimer.Tick += (_, _) =>
+        {
+            deviceTimer.Stop();
+            if (Player.FollowDefaultDevice()) UpdatePlayButton();
+        };
+        Player.OutputDeviceChanged += (_, _) => Dispatcher.BeginInvoke(() => { deviceTimer.Stop(); deviceTimer.Start(); });
 
         Drop += OnDrop;
         PreviewKeyDown += (_, e) => HandleKey(e, inList: false);

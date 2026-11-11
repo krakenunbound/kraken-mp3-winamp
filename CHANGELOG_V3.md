@@ -1,5 +1,13 @@
 # Kraken MP3 — v3 changelog
 
+## 3.0.1 — 2026-11-10
+
+- Follows Windows' default playback device: change speakers/headphones in
+  Windows and the music moves over at the same spot (playing stays playing,
+  paused stays paused).
+- Unplugging the device in use no longer skips to the next song; playback
+  continues on the new default device.
+
 ## 3.0.0 — 2026-11-10 — native rewrite
 
 Kraken MP3 is now a native Windows app (C# / .NET 10, WPF, NAudio, SkiaSharp)

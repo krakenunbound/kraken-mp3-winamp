@@ -10,6 +10,10 @@ namespace KrakenMp3.Audio;
 ///
 /// Position and spectrum follow the device clock (WASAPI's played position),
 /// not the decoder, so the time display and the bars match what is audible.
+///
+/// Output always goes to Windows' default playback device and follows it:
+/// when the default changes (or the device in use disappears), the host calls
+/// <see cref="FollowDefaultDevice"/> and playback moves over at the same spot.
 /// </summary>
 public sealed class Player : IDisposable
 {
@@ -32,6 +36,12 @@ public sealed class Player : IDisposable
     private TimeSpan _anchorTime;
     private long _anchorBytes;
 
+    private readonly MMDeviceEnumerator _devices = new();
+    private readonly DeviceWatcher _watcher;
+    private string? _deviceId;
+    private volatile bool _deviceLost;
+    private volatile bool _resumeAfterLoss; // the device died while playing
+
     private TimeSpan? _measuredDuration;
     private CancellationTokenSource? _measureCts;
 
@@ -39,6 +49,30 @@ public sealed class Player : IDisposable
     public event EventHandler? TrackEnded;
     /// <summary>Raised on a worker thread when a better duration becomes known.</summary>
     public event EventHandler? DurationChanged;
+    /// <summary>Raised on a system thread when the default output changed or the
+    /// device in use went away. Call <see cref="FollowDefaultDevice"/> on the
+    /// thread that owns the player (after a short debounce).</summary>
+    public event EventHandler? OutputDeviceChanged;
+
+    /// <summary>Name of the playback device in use, e.g. "Speakers (Realtek…)".</summary>
+    public string? OutputDeviceName { get; private set; }
+
+    public Player()
+    {
+        _watcher = new DeviceWatcher(this);
+        try { _devices.RegisterEndpointNotificationCallback(_watcher); } catch (Exception) { /* no notifications: still plays */ }
+    }
+
+    internal void NotifyDeviceChange(string? deviceId, bool lost)
+    {
+        if (lost && deviceId != null && deviceId != _deviceId) return; // some other device
+        if (lost)
+        {
+            if (IsPlaying) _resumeAfterLoss = true;
+            _deviceLost = true;
+        }
+        OutputDeviceChanged?.Invoke(this, EventArgs.Empty);
+    }
 
     public string? FilePath { get; private set; }
     public string? DecoderName => _source?.DecoderName;
@@ -119,13 +153,70 @@ public sealed class Player : IDisposable
         _analyzer = new SpectrumAnalyzer(_eq) { Latency = TimeSpan.FromMilliseconds(LatencyMs + 40) };
         _gain = new VolumeBalanceProvider(_analyzer);
         ApplyGain();
-        _output = new WasapiOut(AudioClientShareMode.Shared, true, LatencyMs);
+        _output = CreateOutput();
         _output.Init(_gain);
         _output.PlaybackStopped += OnPlaybackStopped;
         _ended = false;
+        _deviceLost = false;
+        _resumeAfterLoss = false;
         Anchor(TimeSpan.Zero);
 
         if (Decoders.NeedsMeasuredDuration(path)) MeasureInBackground(path);
+    }
+
+    /// <summary>A shared-mode stream on the current default playback device.</summary>
+    private WasapiOut CreateOutput()
+    {
+        var device = _devices.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
+        _deviceId = device.ID;
+        try { OutputDeviceName = device.FriendlyName; } catch (Exception) { OutputDeviceName = null; }
+        return new WasapiOut(device, AudioClientShareMode.Shared, true, LatencyMs);
+    }
+
+    /// <summary>
+    /// Moves playback to Windows' current default output if it differs from
+    /// the one in use (or the one in use was lost), keeping the position and
+    /// the playing/paused state. Returns true if the output was switched.
+    /// </summary>
+    public bool FollowDefaultDevice()
+    {
+        if (_output == null || _gain == null || _source == null || _analyzer == null) return false;
+        string id;
+        try { id = _devices.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia).ID; }
+        catch (Exception) { return false; } // no playback device at all right now; try again on the next change
+        if (id == _deviceId && !_deviceLost) return false;
+
+        bool resume = IsPlaying || _resumeAfterLoss;
+        bool ended = _ended;
+        var pos = Position; // audible position (decoder minus what was still buffered)
+
+        _stopRequested = true;
+        _output.PlaybackStopped -= OnPlaybackStopped;
+        try { _output.Stop(); } catch (Exception) { }
+        _output.Dispose();
+        _stopRequested = false;
+
+        try { _output = CreateOutput(); _output.Init(_gain); }
+        catch (Exception) { _output = null; _deviceLost = true; return false; }
+        _output.PlaybackStopped += OnPlaybackStopped;
+        _deviceLost = false;
+        _resumeAfterLoss = false;
+        if (!ended)
+        {
+            _source.CurrentTime = pos;
+            _analyzer.Reset();
+        }
+        Anchor(_source.CurrentTime);
+        if (resume && !ended) _output.Play();
+        return true;
+    }
+
+    /// <summary>Reopens the output on the default device even if it did not
+    /// change (what a lost device triggers; also used by the device test).</summary>
+    public bool ReconnectOutput()
+    {
+        _deviceLost = true;
+        return FollowDefaultDevice();
     }
 
     public void Play() => _output?.Play();
@@ -202,6 +293,15 @@ public sealed class Player : IDisposable
     private void OnPlaybackStopped(object? sender, StoppedEventArgs e)
     {
         if (_stopRequested) return;
+        if (e.Exception != null)
+        {
+            // The device went away (unplugged, disabled, driver reset). That is
+            // not the end of the song: move to the new default and carry on.
+            _deviceLost = true;
+            _resumeAfterLoss = true;
+            OutputDeviceChanged?.Invoke(this, EventArgs.Empty);
+            return;
+        }
         _ended = true;
         TrackEnded?.Invoke(this, EventArgs.Empty);
     }
@@ -225,7 +325,30 @@ public sealed class Player : IDisposable
         FilePath = null;
     }
 
-    public void Dispose() => CloseOutput();
+    public void Dispose()
+    {
+        try { _devices.UnregisterEndpointNotificationCallback(_watcher); } catch (Exception) { }
+        CloseOutput();
+        _devices.Dispose();
+    }
+}
+
+/// <summary>Windows audio endpoint notifications (called on a system thread).</summary>
+internal sealed class DeviceWatcher(Player player) : NAudio.CoreAudioApi.Interfaces.IMMNotificationClient
+{
+    public void OnDefaultDeviceChanged(DataFlow flow, Role role, string defaultDeviceId)
+    {
+        if (flow == DataFlow.Render && role == Role.Multimedia) player.NotifyDeviceChange(defaultDeviceId, lost: false);
+    }
+
+    public void OnDeviceStateChanged(string deviceId, DeviceState newState)
+    {
+        if (newState != DeviceState.Active) player.NotifyDeviceChange(deviceId, lost: true);
+    }
+
+    public void OnDeviceRemoved(string deviceId) => player.NotifyDeviceChange(deviceId, lost: true);
+    public void OnDeviceAdded(string pwstrDeviceId) { }
+    public void OnPropertyValueChanged(string pwstrDeviceId, PropertyKey key) { }
 }
 
 /// <summary>Volume plus stereo balance (the louder side stays at full level).</summary>
