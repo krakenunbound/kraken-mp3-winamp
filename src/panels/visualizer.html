@@ -47,6 +47,21 @@
         .viz-body .floating-album-stage {
             z-index: 2;
         }
+        .viz-opt-btn { width: 26px; letter-spacing: 0.5px; }
+        /* Chroma-key backgrounds for OBS: solid key colour behind the bars
+           only (title bar keeps its normal look so it can be cropped). */
+        body.viz-bg-green,
+        body.viz-bg-green .winamp-panel,
+        body.viz-bg-green .viz-body { background: #00ff00 !important; }
+        body.viz-bg-magenta,
+        body.viz-bg-magenta .winamp-panel,
+        body.viz-bg-magenta .viz-body { background: #ff00ff !important; }
+        body.viz-bg-black,
+        body.viz-bg-black .winamp-panel,
+        body.viz-bg-black .viz-body { background: #000000 !important; }
+        body.viz-bg-green .panel-titlebar,
+        body.viz-bg-magenta .panel-titlebar,
+        body.viz-bg-black .panel-titlebar { background: var(--panel-bg-dark); }
     </style>
 </head>
 <body class="viz-standalone theme-square">
@@ -55,6 +70,8 @@
             <div class="panel-titlebar viz-titlebar" id="vizTitleBar">
                 <div class="panel-title-text">KRAKEN VISUALIZER</div>
                 <div class="panel-titlebar-btns">
+                    <button type="button" class="title-panel-btn viz-opt-btn" id="btnVizArt" title="Floating album art: Off">ART</button>
+                    <button type="button" class="title-panel-btn viz-opt-btn" id="btnVizBg" title="Background: Normal">BG</button>
                     <button type="button" class="title-panel-btn dock-lock-btn is-locked" data-panel="visualizer" title="Locked below playlist — click to detach" aria-label="Dock lock">
                         <svg class="dock-lock-icon" viewBox="0 0 16 16" width="10" height="10" aria-hidden="true">
                             <g class="lock-closed"><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2" fill="none"/><rect x="4" y="7" width="8" height="6" rx="0.5"/></g>

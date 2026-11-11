@@ -46,6 +46,14 @@ app.commandLine.appendSwitch('disk-cache-dir', cacheDir);
 // Kraken is a user-launched music player. Files opened through Windows shell
 // associations should begin playback without requiring a second in-app click.
 app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
+// Keep animating when other windows cover ours. Chromium's native occlusion
+// tracking marks covered windows as hidden and pauses requestAnimationFrame,
+// which froze the visualizer (and anything capturing it, e.g. OBS) whenever
+// another app was in front of the player.
+app.commandLine.appendSwitch('disable-features', 'CalculateNativeWinOcclusion');
+app.commandLine.appendSwitch('disable-renderer-backgrounding');
+app.commandLine.appendSwitch('disable-background-timer-throttling');
+app.commandLine.appendSwitch('disable-backgrounding-occluded-windows');
 
 let mainWindow;
 let playlistWindow;
@@ -297,6 +305,7 @@ function mainWebPreferences() {
         nodeIntegration: true,
         contextIsolation: false,
         enableRemoteModule: false,
+        backgroundThrottling: false,
         additionalArguments: IS_V2_DOCKING ? ['--v2-docking'] : []
     };
 }
@@ -355,6 +364,7 @@ function ensureEffectsWindow() {
             nodeIntegration: true,
             contextIsolation: false,
             enableRemoteModule: false,
+            backgroundThrottling: false,
             additionalArguments: ['--v2-docking', '--kraken-panel=effects']
         },
         icon: path.join(__dirname, '../assets/icons/icon.png')
@@ -589,6 +599,7 @@ function createV2Windows() {
             nodeIntegration: true,
             contextIsolation: false,
             enableRemoteModule: false,
+            backgroundThrottling: false,
             additionalArguments: ['--v2-docking', '--kraken-panel=playlist']
         },
         icon: path.join(__dirname, '../assets/icons/icon.png')
@@ -614,6 +625,7 @@ function createV2Windows() {
             nodeIntegration: true,
             contextIsolation: false,
             enableRemoteModule: false,
+            backgroundThrottling: false,
             additionalArguments: ['--v2-docking', '--kraken-panel=visualizer']
         },
         icon: path.join(__dirname, '../assets/icons/icon.png')
@@ -639,6 +651,7 @@ function createV2Windows() {
             nodeIntegration: true,
             contextIsolation: false,
             enableRemoteModule: false,
+            backgroundThrottling: false,
             additionalArguments: ['--v2-docking', '--kraken-panel=eq']
         },
         icon: path.join(__dirname, '../assets/icons/icon.png')

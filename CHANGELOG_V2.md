@@ -1,5 +1,37 @@
 # Changelog — Kraken MP3 (v2)
 
+## 2.0.5 — 2026-11-10
+
+### Visualizer keeps animating when covered
+- The visualizer froze whenever another window was in front of the player:
+  Chromium's Windows occlusion tracking paused the main window's animation
+  loop, which is what feeds the visualizer. Occlusion tracking and background
+  throttling are now disabled for all Kraken windows, and a backup timer keeps
+  feeding visualizer frames (~30 fps) if the main loop stalls, e.g. while the
+  player is minimized.
+
+## 2.0.4 — 2026-11-10
+
+### Shuffle
+- Shuffle no longer picks with replacement. Every track plays once per cycle
+  before any repeats, and the track that just finished never plays again
+  back-to-back when a new cycle starts.
+- **Previous** walks back through the tracks that actually played, and
+  **Next** after Previous walks forward through that same history instead of
+  rolling a new random track.
+- With Repeat off, shuffle stops once every track has played; Repeat All
+  starts a fresh shuffled cycle.
+- Opening a new playlist while shuffle is on starts on a random track.
+
+### Visualizer window
+- New **ART** title-bar button cycles floating album art Off / Float / Bounce
+  directly from the visualizer (same setting as the Effects panel).
+- New **BG** title-bar button cycles the visualizer background for streaming
+  overlays: Normal → Green screen → Magenta screen → Black. In the key modes
+  only the lit bars are drawn, fully opaque, with no dim LED grid or
+  translucent fills, so an OBS Chroma Key (green/magenta) or Luma Key (black)
+  filter removes the background cleanly. The choice is remembered.
+
 ## 2.0.3 — 2026-07-31
 
 ### Windows default apps
