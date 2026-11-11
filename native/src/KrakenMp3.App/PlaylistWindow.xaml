@@ -1,0 +1,121 @@
+<Window x:Class="KrakenMp3.App.PlaylistWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Kraken Playlist" Width="440" Height="300" MinWidth="275" MinHeight="140"
+        WindowStyle="None" ResizeMode="CanResizeWithGrip" ShowInTaskbar="False" AllowDrop="True"
+        Background="{DynamicResource PanelBg}" BorderBrush="{DynamicResource BevelLight}" BorderThickness="1"
+        UseLayoutRounding="True" SnapsToDevicePixels="True" TextOptions.TextFormattingMode="Display">
+    <DockPanel>
+        <!-- Title bar -->
+        <Grid DockPanel.Dock="Top" Height="18" Background="{DynamicResource TitleBg}" MouseLeftButtonDown="TitleBar_MouseDown">
+            <TextBlock Text="KRAKEN PLAYLIST" HorizontalAlignment="Center" VerticalAlignment="Center"
+                       FontSize="9" FontWeight="Bold" Foreground="{DynamicResource TextMid}"/>
+            <Button Style="{StaticResource TitleButton}" Content="×" ToolTip="Close" Click="Close_Click"
+                    HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,3,0"/>
+        </Grid>
+
+        <!-- Footer -->
+        <DockPanel DockPanel.Dock="Bottom" Background="{DynamicResource PanelBgDark}" Height="24" Margin="0,0,0,0">
+            <StackPanel Orientation="Horizontal" DockPanel.Dock="Left" Margin="3,2">
+                <Button x:Name="AddButton" Content="ADD" ToolTip="Add files or a folder" Click="Add_Click"/>
+                <Button x:Name="RemButton" Content="REM" ToolTip="Remove (Del)" Click="Rem_Click"/>
+                <Button x:Name="SelButton" Content="SEL" ToolTip="Selection" Click="Sel_Click"/>
+                <Button x:Name="MiscButton" Content="MISC" ToolTip="Sort, save and tidy" Click="Misc_Click"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" Margin="3,2,14,2">
+                <Button Content="FOLDER" ToolTip="Add a folder (Ctrl+Shift+O)" Click="Folder_Click"/>
+                <Button Content="CLEAR" ToolTip="Clear playlist" Click="Clear_Click"/>
+            </StackPanel>
+            <TextBlock x:Name="InfoText" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="10"
+                       FontFamily="{StaticResource LcdFont}" Foreground="{DynamicResource Lcd}" TextTrimming="CharacterEllipsis"/>
+        </DockPanel>
+
+        <!-- List with insertion marker and empty state -->
+        <Grid>
+            <ListBox x:Name="List" Background="{DynamicResource PanelBgDark}" BorderThickness="0"
+                     SelectionMode="Extended" HorizontalContentAlignment="Stretch" AlternationCount="2"
+                     VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling"
+                     VirtualizingPanel.ScrollUnit="Item" ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                     IsTextSearchEnabled="True" TextSearch.TextPath="Title" AllowDrop="True"
+                     MouseDoubleClick="List_DoubleClick" PreviewKeyDown="List_PreviewKeyDown"
+                     PreviewMouseLeftButtonDown="List_PreviewMouseDown" PreviewMouseLeftButtonUp="List_PreviewMouseUp"
+                     PreviewMouseMove="List_PreviewMouseMove"
+                     DragOver="List_DragOver" DragLeave="List_DragLeave" Drop="List_Drop">
+                <ListBox.ContextMenu>
+                    <ContextMenu Opened="RowMenu_Opened">
+                        <MenuItem Header="Play" FontWeight="Bold" Click="PlaySelected_Click"/>
+                        <MenuItem Header="Remove" InputGestureText="Del" Click="Rem_Click"/>
+                        <MenuItem Header="Move to top" InputGestureText="Alt+Home" Click="MoveTop_Click"/>
+                        <MenuItem Header="Move to bottom" InputGestureText="Alt+End" Click="MoveBottom_Click"/>
+                        <Separator/>
+                        <MenuItem x:Name="ShowFileItem" Header="Show in Explorer" Click="ShowInExplorer_Click"/>
+                        <MenuItem Header="Copy path" Click="CopyPath_Click"/>
+                    </ContextMenu>
+                </ListBox.ContextMenu>
+                <ListBox.ItemContainerStyle>
+                    <Style TargetType="ListBoxItem">
+                        <Setter Property="Padding" Value="4,1"/>
+                        <Setter Property="Background" Value="{DynamicResource PlRowOdd}"/>
+                        <Setter Property="ToolTip" Value="{Binding Item.Path}"/>
+                        <Setter Property="ToolTipService.InitialShowDelay" Value="900"/>
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="ListBoxItem">
+                                    <Border x:Name="Bd" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
+                                        <ContentPresenter/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <DataTrigger Binding="{Binding IsCurrent}" Value="True">
+                                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource PlActive}"/>
+                                        </DataTrigger>
+                                        <Trigger Property="IsSelected" Value="True">
+                                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource PlSelected}"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                        <Style.Triggers>
+                            <Trigger Property="ItemsControl.AlternationIndex" Value="1">
+                                <Setter Property="Background" Value="{DynamicResource PlRowEven}"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </ListBox.ItemContainerStyle>
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Right" Text="{Binding DurationText}" FontSize="10"
+                                       FontFamily="{StaticResource LcdFont}" Foreground="{DynamicResource TextMid}" Margin="6,0,0,0"/>
+                            <TextBlock Text="{Binding Number, StringFormat={}{0}.}" FontSize="10" MinWidth="30" Foreground="{DynamicResource TextLo}"/>
+                            <TextBlock Text="{Binding Title}" FontSize="11" TextTrimming="CharacterEllipsis">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="{DynamicResource TextHi}"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsCurrent}" Value="True">
+                                                <Setter Property="Foreground" Value="{DynamicResource Lcd}"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Failed}" Value="True">
+                                                <Setter Property="Foreground" Value="{DynamicResource Danger}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </DockPanel>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+
+            <Canvas x:Name="DropLayer" IsHitTestVisible="False">
+                <Rectangle x:Name="DropMarker" Height="2" Fill="{DynamicResource Lcd}" Visibility="Collapsed"/>
+            </Canvas>
+
+            <StackPanel x:Name="EmptyState" HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False">
+                <TextBlock Text="〜" FontSize="22" Foreground="{DynamicResource TextLo}" HorizontalAlignment="Center"/>
+                <TextBlock Text="Drop audio files, folders or playlists here" FontSize="11" Foreground="{DynamicResource TextMid}"/>
+            </StackPanel>
+        </Grid>
+    </DockPanel>
+</Window>

@@ -1,0 +1,109 @@
+<Window x:Class="KrakenMp3.App.EqWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Kraken Equalizer" Width="440" SizeToContent="Height"
+        WindowStyle="None" ResizeMode="NoResize" ShowInTaskbar="False"
+        Background="{DynamicResource PanelBg}" BorderBrush="{DynamicResource BevelLight}" BorderThickness="1"
+        UseLayoutRounding="True" SnapsToDevicePixels="True" TextOptions.TextFormattingMode="Display">
+    <Window.Resources>
+        <!-- Vertical lever slider, −12…+12 dB -->
+        <Style x:Key="EqSlider" TargetType="Slider">
+            <Setter Property="Orientation" Value="Vertical"/>
+            <Setter Property="Minimum" Value="-12"/>
+            <Setter Property="Maximum" Value="12"/>
+            <Setter Property="SmallChange" Value="0.5"/>
+            <Setter Property="LargeChange" Value="3"/>
+            <Setter Property="TickFrequency" Value="0.5"/>
+            <Setter Property="IsSnapToTickEnabled" Value="True"/>
+            <Setter Property="IsMoveToPointEnabled" Value="True"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="Height" Value="96"/>
+            <Setter Property="Width" Value="22"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Slider">
+                        <Grid Background="Transparent">
+                            <Border Width="4" HorizontalAlignment="Center" Background="{DynamicResource EqTrack}"
+                                    BorderBrush="{DynamicResource BevelLight}" BorderThickness="1"/>
+                            <Border Width="10" Height="1" HorizontalAlignment="Center" VerticalAlignment="Center" Background="{DynamicResource TextLo}"/>
+                            <Track x:Name="PART_Track" IsDirectionReversed="True">
+                                <Track.DecreaseRepeatButton>
+                                    <RepeatButton Command="Slider.DecreaseLarge" Focusable="False" Opacity="0"/>
+                                </Track.DecreaseRepeatButton>
+                                <Track.IncreaseRepeatButton>
+                                    <RepeatButton Command="Slider.IncreaseLarge" Focusable="False" Opacity="0"/>
+                                </Track.IncreaseRepeatButton>
+                                <Track.Thumb>
+                                    <Thumb Focusable="False">
+                                        <Thumb.Template>
+                                            <ControlTemplate TargetType="Thumb">
+                                                <Border x:Name="L" Width="16" Height="8" Background="{DynamicResource Accent}"
+                                                        BorderBrush="{DynamicResource BevelDark}" BorderThickness="1"/>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="L" Property="Background" Value="{DynamicResource AccentBright}"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Thumb.Template>
+                                    </Thumb>
+                                </Track.Thumb>
+                            </Track>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="BandLabel" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="8"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMid}"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="0,3,0,0"/>
+        </Style>
+    </Window.Resources>
+
+    <StackPanel>
+        <Grid Height="18" Background="{DynamicResource TitleBg}" MouseLeftButtonDown="TitleBar_MouseDown">
+            <TextBlock Text="KRAKEN EQUALIZER" HorizontalAlignment="Center" VerticalAlignment="Center"
+                       FontSize="9" FontWeight="Bold" Foreground="{DynamicResource TextMid}"/>
+            <Button Style="{StaticResource TitleButton}" Content="×" ToolTip="Close" Click="Close_Click"
+                    HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,3,0"/>
+        </Grid>
+
+        <DockPanel Margin="6,6,6,2">
+            <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
+                <Button x:Name="OnButton" Content="ON" MinWidth="34" ToolTip="Equalizer on/off" Click="On_Click"/>
+                <Button Content="RESET" ToolTip="Flatten all bands" Click="Reset_Click"/>
+            </StackPanel>
+            <Button x:Name="PresetButton" DockPanel.Dock="Right" MinWidth="110" ToolTip="Presets" Click="Preset_Click">
+                <DockPanel>
+                    <TextBlock Text="▾" DockPanel.Dock="Right" Margin="6,0,0,0" Foreground="{DynamicResource TextMid}"/>
+                    <TextBlock x:Name="PresetText" Text="FLAT" Foreground="{DynamicResource Lcd}"/>
+                </DockPanel>
+            </Button>
+            <TextBlock x:Name="ReadoutText" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="10"
+                       FontFamily="{StaticResource LcdFont}" Foreground="{DynamicResource Lcd}"/>
+        </DockPanel>
+
+        <Border Background="{DynamicResource LcdBg}" BorderBrush="{DynamicResource BevelDark}" BorderThickness="1" Margin="6,2,6,6" Padding="4,6,4,4">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                <Grid Height="96" Width="22" Margin="0,0,2,14">
+                    <TextBlock Text="+12" FontSize="8" Foreground="{DynamicResource TextLo}" VerticalAlignment="Top"/>
+                    <TextBlock Text="0" FontSize="8" Foreground="{DynamicResource TextLo}" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,4,0"/>
+                    <TextBlock Text="−12" FontSize="8" Foreground="{DynamicResource TextLo}" VerticalAlignment="Bottom"/>
+                </Grid>
+                <StackPanel>
+                    <Slider x:Name="PreampSlider" Style="{StaticResource EqSlider}" ToolTip="Preamp (double-click for 0 dB)"/>
+                    <TextBlock Text="PRE" Style="{StaticResource BandLabel}"/>
+                </StackPanel>
+                <Border Width="1" Background="{DynamicResource BevelLight}" Margin="8,0,6,14"/>
+                <ItemsControl x:Name="Bands">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                </ItemsControl>
+            </StackPanel>
+        </Border>
+    </StackPanel>
+</Window>

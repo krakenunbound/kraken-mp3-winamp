@@ -8,3 +8,10 @@ Install File/*.blockmap
 Thumbs.db
 .vscode/
 .idea/
+
+# Native v3 (.NET)
+native/**/bin/
+native/**/obj/
+native/testdata/
+native/.vs/
+native/publish/
